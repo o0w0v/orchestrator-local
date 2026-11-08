@@ -1,5 +1,15 @@
 # Validation of the Windows preview
 
+## Desktop edition 0.2.0
+
+The desktop edition adds setup/status/history controls and a Python-bundled Windows x64 ZIP. The application still uses the same service, Store, worker and conversation-side review. It does not add a model call or adopt a candidate from the GUI.
+
+The source suite contains 19 tests, including temporary registration/removal, preserving conflicting Startup shortcuts, input import without overwrite, service singleton start/stop, candidate versus completed-result access, frozen command paths and Tk widget rendering.
+
+`packaging/smoke_windows.py` exercises the actual EXEs with Python removed from child PATH: temporary connection and Startup registration, singleton service startup without generation, official MCP stdio client with eight tools, one fake backend generation, GUI status before/after review, acceptance and saved artifacts, and clean service shutdown. All paths point into a temporary profile; no real model or paid Cloud is used. The suite does not prove behavior on a different PC or through an OS login/reboot.
+
+Build instructions and the GUI workflow are in [docs/GUI_JA.md](docs/GUI_JA.md). The unsigned distribution includes dependency notices, Python's license, and file/archive SHA-256 checksums. The earlier manual real-model acceptance below applies to the underlying worker and is not a new GUI inference test.
+
 Validated on Windows with Python 3.11, MCP Python SDK 1.30.0, an existing Ollama installation, and Gemma4 26B. Other-PC acceptance testing has not been performed.
 
 ## Automated checks

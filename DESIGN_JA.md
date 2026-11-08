@@ -28,3 +28,9 @@ flowchart TD
 実行サービスはMCP stdio processの子として起動しない。Windowsのクライアントがstdioの子processを終了しても作業を継続できるように、別起動とする。OS再起動などで実行が中断した場合はINTERRUPTEDとし、自動再生成しない。ログイン自動起動は利用者が選んだ場合だけ登録する。
 
 JSON/schemaやCSV列の検証は形式確認であり、業務上の正しさの判定は会話側に残る。会話側の最終確認も誤り得る。研究用100件の結果や、別に公開したRust開発用のRouter/Workerを、そのままこの業務アプリの保証とは扱わない。
+
+## GUIと配布版
+
+`gui.py`は初回設定・ホーム・作業履歴の画面を提供し、時間のかかる処理は別スレッドで行う。`desktop.py`が`installation.py`の設定/接続登録、既存サービスの一重起動、同じStoreの履歴/中止/成果物を利用する。画面の開閉や状態確認では生成せず、候補をGUIから自動採用しない。
+
+Windows配布版はPython同梱のフォルダ形式。`OrchestratorLocal.exe`は画面と非表示サービス、`OrchestratorLocal.Runtime.exe`はMCPのstdio接続を担当する。設定とユーザーデータは配布フォルダの外に置き、`skills`とサンプルは明示した公開リソースだけを同梱する。

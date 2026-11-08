@@ -1,4 +1,4 @@
-# Orchestrator Local 0.1.0 — Windows preview
+# Orchestrator Local 0.2.0 — Windows preview
 
 > Keep asking your usual AI as before. Share some of the work with an AI on your PC to reduce Cloud AI consumption.
 
@@ -18,9 +18,15 @@ See the [evaluation summary and original records](docs/EVALUATION_JA.md). This p
 
 The conversation AI handles consultation/design and final review, while Gemma does some of the work. Usable output is kept; necessary corrections are saved as precise edits. The [internal design](DESIGN_JA.md) and the implementation notes below explain this workflow.
 
-## Before installing
+## Windows desktop download
 
-This is a source release for Windows users who already have Python 3.11+ and a working Ollama installation with `gemma4:26b`. Model weights, Ollama, Python, user configuration, job data and credentials are not included. This is not a one-click installer or a reviewed plugin-directory listing. macOS/Linux and other machines have not been acceptance tested.
+Download the [Windows x64 ZIP](https://github.com/o0w0v/orchestrator-local/releases/download/v0.2.0/OrchestratorLocal-0.2.0-windows-x64.zip), extract the complete folder, and double-click `OrchestratorLocal.exe`. Python is bundled. An existing Ollama installation and compatible Gemma4:26b are still required; they are not downloaded automatically.
+
+The GUI provides first-run setup, start/stop and login startup, input-file import, job status/cancellation, and opening completed results. Requests and final content review stay in the conversation. Automatic connection registration currently targets Codex MCP and Skill settings. See the [GUI guide](docs/GUI_JA.md). This initial Windows build is unsigned; checksums are in the [release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.2.0).
+
+## Source installation
+
+The source edition is for Windows users who already have Python 3.11+ and a working Ollama installation with `gemma4:26b`. Model weights, Ollama, Python, user configuration, job data and credentials are not included. This is not a one-click installer or a reviewed plugin-directory listing. macOS/Linux and other machines have not been acceptance tested.
 
 The model creates candidates only. The conversation checks them against the original request, accepts usable output, or patches errors that affect use. It does not regenerate results to improve style. Files and SQLite jobs survive MCP reconnects; failed or interrupted generations are not retried automatically.
 
