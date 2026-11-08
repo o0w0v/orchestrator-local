@@ -16,7 +16,7 @@ def main():
         raise SystemExit('Build this distribution on Windows')
     resources = ROOT / 'build-resources'
     licenses = resources / 'licenses'; licenses.mkdir(parents=True, exist_ok=True)
-    notices = ['Orchestrator Local 0.5.0 — third-party components',
+    notices = ['Orchestrator Local 0.6.0 — third-party components',
                'Application source: MIT, see LICENSE. Model weights and Ollama are not bundled.', '']
     python_license = Path(sys.base_prefix) / 'LICENSE.txt'
     if not python_license.is_file():
@@ -37,7 +37,7 @@ def main():
     subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', str(ROOT / 'packaging/windows.spec')], cwd=ROOT, check=True)
     folder = ROOT / 'dist/OrchestratorLocal'
     (folder / 'START_HERE_JA.txt').write_text(
-        'Orchestrator Local 0.5.0\n\n通常はSetup.exeを開き、案内に沿って「次へ」で進んでください。\n'
+        'Orchestrator Local 0.6.0\n\n通常はSetup.exeを開き、案内に沿って「次へ」で進んでください。\n'
         'ZIP版ではすべて展開してOrchestratorLocal.exeを開くとセットアップが始まります。\n'
         '接続を再起動して新しい会話を開き、いつも通り依頼してください。\n'
         '普段は主画面のローカル分担ON/OFFだけ。初期状態はOFFです。\n'
@@ -56,16 +56,16 @@ def main():
             raise RuntimeError('Private file in build: ' + relative)
         manifest.append({'path': relative, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()})
     (folder / 'FILES.sha256.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
-    archive = ROOT / 'dist/OrchestratorLocal-0.5.0-windows-x64.zip'
+    archive = ROOT / 'dist/OrchestratorLocal-0.6.0-windows-x64.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         for p in sorted(folder.rglob('*')):
             if p.is_file(): z.write(p, 'OrchestratorLocal/' + p.relative_to(folder).as_posix())
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     archive.with_suffix('.zip.sha256').write_text(f'{digest}  {archive.name}\n', encoding='ascii')
     print(json.dumps({'archive': str(archive), 'sha256': digest, 'files': len(manifest)}, ensure_ascii=False))
-    (resources/'installer-payload.json').write_text(json.dumps({'version':'0.5.0','name':archive.name,'sha256':digest}),encoding='utf8')
+    (resources/'installer-payload.json').write_text(json.dumps({'version':'0.6.0','name':archive.name,'sha256':digest}),encoding='utf8')
     subprocess.run([sys.executable,'-m','PyInstaller','--noconfirm','--clean',str(ROOT/'packaging/installer.spec')],cwd=ROOT,check=True)
-    installer=ROOT/'dist/OrchestratorLocal-0.5.0-Setup.exe'
+    installer=ROOT/'dist/OrchestratorLocal-0.6.0-Setup.exe'
     installer_digest=hashlib.sha256(installer.read_bytes()).hexdigest()
     installer.with_suffix('.exe.sha256').write_text(f'{installer_digest}  {installer.name}\n',encoding='ascii')
     print(json.dumps({'installer':str(installer),'sha256':installer_digest}))

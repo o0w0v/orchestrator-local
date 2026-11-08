@@ -60,7 +60,8 @@ class Backend(BaseHTTPRequestHandler):
         try:
             for _ in range(200 if scenario=='slow' else 2):
                 self.wfile.write(b'{"message":{"thinking":"PRIVATE_FAKE_THOUGHT_DO_NOT_SAVE"},"done":false}\n');self.wfile.flush();time.sleep(.02)
-            text='not JSON' if scenario=='invalid' else packed(BASE)
+            value={'data':{'files':[{'path':'src/add.js','content':'export const add = (a, b) => a + b;\n'}]},'report_md':'加算関数のコード案です。'} if scenario=='code' else BASE
+            text='not JSON' if scenario=='invalid' else packed(value)
             for part in [text[:10],text[10:]]:
                 self.wfile.write((packed({'message':{'content':part},'done':False})+'\n').encode());self.wfile.flush()
             self.wfile.write((packed({'message':{'content':''},'done':True,'done_reason':'stop','prompt_eval_count':50,'eval_count':40,'total_duration':100000000,'load_duration':0,'prompt_eval_duration':100,'eval_duration':200})+'\n').encode());self.wfile.flush()
@@ -127,7 +128,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def test_stdio_generation_reconnect_patch_and_amend(self):
         before=Backend.calls
         async with client(self.config) as s:
-            tools=await s.list_tools();self.assertEqual(len(tools.tools),8)
+            tools=await s.list_tools();self.assertEqual(len(tools.tools),9)
             a=await call(s,'start_job',request_key='one',request='資料を集計する',inputs={'scenario':'normal'},csv_exports=EXPORTS)
             duplicate=await call(s,'start_job',request_key='one',request='資料を集計する',inputs={'scenario':'normal'},csv_exports=EXPORTS)
             self.assertEqual(a['id'],duplicate['id']);self.assertTrue(duplicate['reused'])

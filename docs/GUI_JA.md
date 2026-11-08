@@ -7,11 +7,11 @@
 |ON|対応する作業で、必要に応じてPC内のGemmaへ分担する|
 |OFF|新しいGemma作業を始めず、通常のCodexで処理する|
 
-ONでも「今回は使わない」「この会話では使わない」という指示を優先します。CSV/JSONの整理・集計や短い報告文が対象で、雑談やプログラム開発まで自動分担する設定ではありません。
+ONでも「今回は使わない」「この会話では使わない」という指示を優先します。CSV/JSONの整理・集計、短い報告文、小規模アプリのコード案が対象です。例えば「電卓アプリを作って」と依頼できます。会話側が分担する範囲を決め、コードの反映・起動・テストを行います。ONは、すべての依頼や開発工程をGemmaへ渡す設定ではありません。
 
 ## 初回だけ設定する
 
-1. [Windowsインストーラ](https://github.com/o0w0v/orchestrator-local/releases/download/v0.5.0/OrchestratorLocal-0.5.0-Setup.exe)を開きます。ZIPの手動展開は不要です。
+1. [Windowsインストーラ](https://github.com/o0w0v/orchestrator-local/releases/download/v0.6.0/OrchestratorLocal-0.6.0-Setup.exe)を開きます。ZIPの手動展開は不要です。
 2. セットアップの「次へ」で進み、検出したOllama・保存先を確認して「インストールする」を押します。
 3. Codexを再起動し、新しい会話を開きます。
 4. スタートメニューのOrchestrator Localを開き、使いたいときにONにしてください。

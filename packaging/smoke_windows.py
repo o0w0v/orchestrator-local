@@ -1,6 +1,7 @@
 """Exercise the actual Windows EXEs using a fake backend and isolated user paths."""
 import argparse
 import asyncio
+import hashlib
 from http.server import ThreadingHTTPServer
 import json
 import os
@@ -62,7 +63,7 @@ async def check(folder):
                         async with stdio_client(params, errlog=errlog) as (r, w):
                             async with ClientSession(r, w) as session:
                                 await session.initialize()
-                                assert len((await session.list_tools()).tools) == 8
+                                assert len((await session.list_tools()).tools) == 9
                                 status = await call(session, 'local_status')
                                 assert not status['local_dispatch']['enabled'] and status['service']['ready']
                                 rejected = await session.call_tool('start_job', arguments={'request_key':'off-before','request':'開始しない'})
@@ -101,12 +102,40 @@ async def check(folder):
                                 assert off_ui['power_ring']=='#cbd2dc' and off_ui['power_state']=='OFF'
                     diagnostics = (root / 'mcp.stderr.log').read_text(encoding='utf8')
                     assert 'Traceback' not in diagnostics, diagnostics
-                    assert Backend.calls == before + 1
+                    async def bridge(name, arguments=None, success=True):
+                        argsfile=root/('arguments-'+name+'.json')
+                        argsfile.write_text(json.dumps(arguments or {},ensure_ascii=False),encoding='utf8')
+                        process=await asyncio.to_thread(subprocess.run,
+                            [str(Path(system_path)/'WindowsPowerShell/v1.0/powershell.exe'),'-NoProfile','-ExecutionPolicy','Bypass','-File',
+                             str(controller.skill_root/'orchestrator-local/scripts/call_tool.ps1'),
+                             '-Config',str(config),'-Tool',name,'-ArgumentsFile',str(argsfile)],
+                            capture_output=True,text=True,encoding='utf8',timeout=30)
+                        value=json.loads(process.stdout)
+                        assert process.returncode==(0 if success else 1),(value,process.stderr)
+                        return value
+                    assert not (await bridge('local_status'))['local_dispatch']['enabled']
+                    code_args={'request_key':'bundle-code','request':'加算関数の案',
+                               'file_paths':['src/add.js'],'inputs':{'scenario':'code'}}
+                    assert 'OFF' in (await bridge('start_code_job',code_args,False))['error']
+                    assert Backend.calls==before+1
+                    controller.set_enabled(True)
+                    code=await bridge('start_code_job',code_args)
+                    assert (await bridge('start_code_job',code_args))['id']==code['id']
+                    candidate=await bridge('get_job',{'job_id':code['id'],'wait_seconds':25})
+                    assert candidate['state']=='CANDIDATE_READY'
+                    controller.set_enabled(False)
+                    saved=await bridge('finalize_job',{'job_id':code['id'],'candidate_hash':candidate['candidate_hash']})
+                    source=Path(saved['saved_path'])/'source/src/add.js'
+                    assert source.read_text()=='export const add = (a, b) => a + b;\n'
+                    manifest=json.loads((source.parents[2]/'manifest.json').read_text())
+                    assert manifest['files']['source/src/add.js']==hashlib.sha256(source.read_bytes()).hexdigest()
+                    assert Backend.calls == before + 2
                     return {'result': 'PASS', 'standalone_exes': True, 'python_removed_from_child_PATH': True,
-                            'mcp_tools': 8, 'fake_generations': 1, 'real_model_calls': 0,
+                            'mcp_tools': 9, 'fake_generations': 2, 'real_model_calls': 0,
                             'gui': ui_state, 'temporary_registration_and_startup': True,
                             'singleton_start': True, 'review_and_save': True, 'default_off': True,
-                            'hot_off_blocks_existing_mcp': True, 'compact_home': True}
+                            'hot_off_blocks_existing_mcp': True, 'compact_home': True,
+                            'installed_skill_bridge': True, 'code_dedup_review_source_export': True}
                 finally:
                     controller.stop_service()
                     assert all(child.returncode == 0 for child in controller.children), 'Service did not exit cleanly'
@@ -122,7 +151,7 @@ def main():
     args = p.parse_args()
     if args.installer:
         with tempfile.TemporaryDirectory(prefix='orchestrator installer with spaces ') as tmp:
-            root=Path(tmp);destination=root/'Programs/0.5.0';receipt=root/'installer.json'
+            root=Path(tmp);destination=root/'Programs/0.6.0';receipt=root/'installer.json'
             subprocess.run([str(args.installer.resolve()),'--check-payload','--destination',str(destination),
                             '--menu-folder',str(root/'menu'),'--report',str(receipt)],check=True,timeout=60)
             assert json.loads(receipt.read_text())['result']=='PASS'

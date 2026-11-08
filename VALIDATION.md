@@ -1,5 +1,15 @@
 # Validation of the Windows preview
 
+## Small code drafts 0.6.0
+
+All 37 source tests passed with fake backends and temporary profiles. New checks cover requested source paths, Windows filename/path collisions, code-job deduplication, review and nested source exports, manifest hashes, preserving earlier revisions, and the installed Skill bridge's shared OFF guard. A GUI shutdown fix cancels pending timers and releases Tcl objects on the UI thread. The actual compiled Setup/application passed the isolated smoke test with Python removed from child PATH, nine MCP tools, both fake data/code generations, installed PowerShell Skill bridge calls, review/save and ON/OFF checks.
+
+The real development PC was updated to 0.6.0, retaining all 19 previous job files, data/model paths, unrelated Codex settings, Startup preference and the user's ON setting. One real calculator job was interrupted by a PC crash before any completed candidate or usage record; that job remains INTERRUPTED. Windows recorded a bugcheck and earlier GPU-driver errors, which do not by themselves establish the cause. After the user's explicit request to continue, one separate recovery attempt used the same request and preserved the earlier record. There was no automatic retry or rerun of a completed generation.
+
+The recovery job completed in 187.546 seconds (including local load), reporting 227 input and 7,213 output tokens. The conversation reviewed the returned single-file HTML/CSS/JavaScript calculator and accepted it without patches or regeneration. Actual browser button interactions passed eight checks: addition, subtraction, multiplication, division, decimals, division-by-zero error, clear, and calculation after clearing the error. The reviewed source was copied to a separate demo folder; the application did not execute code or edit a source repository. Saved file hashes matched the manifest. The first attempt used the installed Skill bridge, and the recovery used the reconnected native MCP tools.
+
+This establishes one small coding workflow on this PC. It does not establish general coding quality or cost savings. Conversation-side Credits, the interrupted attempt's local usage and the direct-Codex comparison cost are unmeasured. No paid baseline or extra Cloud reviewer was called. The historical synthetic data study is not a coding benchmark.
+
 ## Power control 0.5.0
 
 The home now centers a large vector power control. ON has a green ring and ON text; OFF has a gray ring and OFF text. The control also supports keyboard activation, a visible focus indicator, disabling during pending operations, and cancelling a pointer press dragged outside the circle. Details remains secondary.

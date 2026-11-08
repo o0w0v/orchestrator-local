@@ -1,6 +1,6 @@
 # Orchestrator Local
 
-Standalone Windows Python application for CSV/JSON jobs using local Gemma and conversation-side review. The application does not edit a user's source repository or run arbitrary generated code.
+Standalone Windows Python application for CSV/JSON jobs and small code drafts using local Gemma and conversation-side review. The application exports reviewed source files into its own result directory. It does not edit a user's source repository or run arbitrary generated code; the conversation handles reviewed copying, execution and tests.
 
 Run `python -X utf8 -B -m unittest discover -s tests -v` from the repository root with the application dependencies installed. Tests use a fake backend and temporary settings/data paths. Do not add live inference, downloads, paid Cloud calls or changes to actual user registrations to the test suite.
 

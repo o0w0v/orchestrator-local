@@ -126,11 +126,14 @@ def apply_setup(controller, plan, data_dir, ollama_exe, models='', auto_start=Fa
     backup = Path(data_dir).resolve()/'runtime'/('setup-backup-'+stamp)
     backup.mkdir(parents=True)
     config_before = controller.config.read_bytes() if controller.config.exists() else None
+    launch_path=controller.config.parent/'tool-launch.json'
+    launch_before=launch_path.read_bytes() if launch_path.exists() else None
     codex_before = controller.codex_config.read_bytes() if controller.codex_config.exists() else None
     skill = controller.skill_root/'orchestrator-local'
     skill_before = files(skill) if skill.exists() else None
     link = shortcut_state(controller)
     if config_before is not None: (backup/'local-settings.json').write_bytes(config_before)
+    if launch_before is not None:(backup/'tool-launch.json').write_bytes(launch_before)
     if codex_before is not None: (backup/'config.toml').write_bytes(codex_before)
     if skill_before is not None: shutil.copytree(skill,backup/'skill')
     if link: shutil.copyfile(link['path'],backup/'startup.lnk')
@@ -162,6 +165,9 @@ def apply_setup(controller, plan, data_dir, ollama_exe, models='', auto_start=Fa
         changed.append('startup')
         controller.set_startup(auto_start)
         Store(settings).set_dispatch_enabled(False)
+        from .paths import tool_launcher
+        _write(launch_path,(json.dumps(tool_launcher(settings),ensure_ascii=False,indent=2)+'\n').encode('utf8'))
+        changed.append('launcher')
         receipt = {'registered':True,'server_name':'orchestrator_local','application_version':__version__,
                    'config_path':str(controller.codex_config),'settings_path':str(controller.config),
                    'skill_files_sha256':files(skill),'backup':str(backup),'data_preserved':True,
@@ -184,6 +190,7 @@ def apply_setup(controller, plan, data_dir, ollama_exe, models='', auto_start=Fa
             if skill.exists():shutil.rmtree(skill)
             if skill_before is not None: shutil.copytree(backup/'skill',skill)
         if 'codex' in changed: _restore(controller.codex_config,codex_before)
+        if 'launcher' in changed:_restore(launch_path,launch_before)
         if 'settings' in changed: _restore(controller.config,config_before)
         raise
     finally:

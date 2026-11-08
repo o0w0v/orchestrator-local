@@ -30,6 +30,10 @@ class PowerButton(tk.Canvas):
     def __getitem__(self, key):
         return self.action_label if key == 'text' else super().__getitem__(key)
 
+    def destroy(self):
+        self.command = None
+        super().destroy()
+
     def set_value(self, enabled, action_label):
         self.is_on = bool(enabled)
         self.action_label = action_label

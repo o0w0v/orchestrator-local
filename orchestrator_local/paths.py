@@ -15,19 +15,24 @@ def default_config():
 
 
 def runtime_command(mode, config):
-    if mode not in {'mcp', 'service'}:
+    if mode not in {'mcp', 'service', 'call'}:
         raise ValueError('Unknown runtime mode')
     if getattr(sys, 'frozen', False):
-        name = 'OrchestratorLocal.Runtime.exe' if mode == 'mcp' else 'OrchestratorLocal.exe'
-        prefix = [mode] if mode == 'mcp' else ['--service']
+        name = 'OrchestratorLocal.Runtime.exe' if mode in {'mcp','call'} else 'OrchestratorLocal.exe'
+        prefix = [mode] if mode in {'mcp','call'} else ['--service']
         return [str(Path(sys.executable).parent / name), *prefix, '--config', str(Path(config).resolve())]
-    script = 'serve.py' if mode == 'mcp' else 'service_entry.py'
+    script = 'runtime_entry.py' if mode=='call' else ('serve.py' if mode == 'mcp' else 'service_entry.py')
     executable = Path(sys.executable)
-    if mode == 'mcp' and executable.name.lower() == 'pythonw.exe' and executable.with_name('python.exe').is_file():
+    if mode in {'mcp','call'} and executable.name.lower() == 'pythonw.exe' and executable.with_name('python.exe').is_file():
         executable = executable.with_name('python.exe')
     if mode == 'service' and sys.platform == 'win32' and executable.with_name('pythonw.exe').is_file():
         executable = executable.with_name('pythonw.exe')
-    return [str(executable), str(resource_root() / script), '--config', str(Path(config).resolve())]
+    return [str(executable), str(resource_root() / script), *(['call'] if mode=='call' else []), '--config', str(Path(config).resolve())]
+
+
+def tool_launcher(settings):
+    return {'application':'orchestrator-local','config_path':str(Path(settings['config_path']).resolve()),
+            'command':runtime_command('call',settings['config_path'])}
 
 
 def default_data_dir():
