@@ -1,4 +1,4 @@
-# Orchestrator Local 0.2.0 — Windows preview
+# Orchestrator Local 0.3.0 — Windows preview
 
 > Keep asking your usual AI as before. Share some of the work with an AI on your PC to reduce Cloud AI consumption.
 
@@ -20,9 +20,9 @@ The conversation AI handles consultation/design and final review, while Gemma do
 
 ## Windows desktop download
 
-Download the [Windows x64 ZIP](https://github.com/o0w0v/orchestrator-local/releases/download/v0.2.0/OrchestratorLocal-0.2.0-windows-x64.zip), extract the complete folder, and double-click `OrchestratorLocal.exe`. Python is bundled. An existing Ollama installation and compatible Gemma4:26b are still required; they are not downloaded automatically.
+Download the [Windows x64 ZIP](https://github.com/o0w0v/orchestrator-local/releases/download/v0.3.0/OrchestratorLocal-0.3.0-windows-x64.zip), extract the complete folder, and double-click `OrchestratorLocal.exe`. Python is bundled. An existing Ollama installation and compatible Gemma4:26b are still required; they are not downloaded automatically.
 
-The GUI provides first-run setup, start/stop and login startup, input-file import, job status/cancellation, and opening completed results. Requests and final content review stay in the conversation. Automatic connection registration currently targets Codex MCP and Skill settings. See the [GUI guide](docs/GUI_JA.md). This initial Windows build is unsigned; checksums are in the [release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.2.0).
+The compact home shows one local-delegation ON/OFF control. First-run setup and optional job/file controls live under Details. New installations and upgrades default to OFF. Turning ON starts the compatible service; OFF blocks new local admission and queued starts without a Codex restart. Running work can finish and existing results remain available. The preference is shared by conversations using the same data folder. Skill registration is retained; this is distinct from disabling the skill in Codex settings. A conversation request not to use it takes priority even while ON. Requests and final content review stay in the conversation. Automatic connection registration currently targets Codex MCP and Skill settings. See the [GUI guide](docs/GUI_JA.md). This initial Windows build is unsigned; checksums are in the [release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.3.0).
 
 ## Source installation
 

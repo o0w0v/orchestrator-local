@@ -215,6 +215,25 @@ class Store:
             for name in ['result_schema','result_exports']:
                 if name not in columns:
                     db.execute('ALTER TABLE jobs ADD COLUMN '+name+' TEXT')
+            db.execute('''CREATE TABLE IF NOT EXISTS local_control (
+                id INTEGER PRIMARY KEY CHECK(id=1), enabled INTEGER NOT NULL CHECK(enabled IN (0,1)), changed REAL NOT NULL)''')
+            db.execute('INSERT OR IGNORE INTO local_control(id,enabled,changed) VALUES(1,0,?)', (time.time(),))
+
+    def dispatch_state(self):
+        with self.connection() as db:
+            row = db.execute('SELECT enabled,changed FROM local_control WHERE id=1').fetchone()
+            if row is None or row['enabled'] not in (0, 1):
+                raise UserError('ローカル分担の設定を読み取れません。生成せず停止します')
+            counts = dict(db.execute("SELECT state,COUNT(*) FROM jobs WHERE executor='gemma' AND state IN ('QUEUED','RUNNING') GROUP BY state").fetchall())
+        return {'enabled': bool(row['enabled']), 'changed': row['changed'],
+                'running': counts.get('RUNNING', 0), 'queued': counts.get('QUEUED', 0)}
+
+    def set_dispatch_enabled(self, enabled):
+        if type(enabled) is not bool:
+            raise UserError('ローカル分担の切り替えはON/OFFで指定してください')
+        with self.transaction() as db:
+            db.execute('UPDATE local_control SET enabled=?,changed=? WHERE id=1', (int(enabled), time.time()))
+        return self.dispatch_state()
 
     def connect(self):
         db = sqlite3.connect(self.root / "jobs.sqlite3", timeout=15)
@@ -272,6 +291,8 @@ class Store:
                 if old["payload_hash"] != fingerprint:
                     raise UserError("同じrequest_keyに別の入力は使えません")
                 return dict(old), False
+            if executor == 'gemma' and not db.execute('SELECT enabled FROM local_control WHERE id=1').fetchone()[0]:
+                raise UserError('ローカル分担はOFFです。通常のCodexで処理するか、画面でONにしてください')
             if db.execute("SELECT COUNT(*) FROM jobs WHERE state IN ('QUEUED','RUNNING')").fetchone()[0] >= 8:
                 raise UserError("待ちジョブが多いため、完了後に依頼してください")
             job_id = uuid.uuid4().hex
@@ -295,6 +316,8 @@ class Store:
     def claim(self, job_id):
         with self.transaction() as db:
             row = self.get(job_id, db)
+            if row['executor'] == 'gemma' and not db.execute('SELECT enabled FROM local_control WHERE id=1').fetchone()[0]:
+                return False
             if row["cancel"] or row["state"] != "QUEUED":
                 return False
             first = db.execute("SELECT id FROM jobs WHERE state IN ('RUNNING','QUEUED') ORDER BY CASE state WHEN 'RUNNING' THEN 0 ELSE 1 END,created,id LIMIT 1").fetchone()

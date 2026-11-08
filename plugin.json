@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "orchestrator-local",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "CSV/JSONの作業をローカルGemmaへ渡し、会話側の確認と必要な差分修正で成果物を保存します。",
   "skills": "./skills/"
 }
