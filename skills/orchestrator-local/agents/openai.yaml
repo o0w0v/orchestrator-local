@@ -1,0 +1,9 @@
+interface:
+  display_name: "Orchestrator Local"
+  short_description: "CSV・JSONの仕事をローカルGemmaへ渡し、確認して成果物を保存する"
+  default_prompt: "$orchestrator-local この資料を整理して、使える一覧と短い共有文を作成してください。"
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "orchestrator_local"
+      description: "このPCのGemma実行、ジョブ管理、確認後の成果物保存"
