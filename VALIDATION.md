@@ -1,5 +1,11 @@
 # Validation of the Windows preview
 
+## Power control 0.5.0
+
+The home now centers a large vector power control. ON has a green ring and ON text; OFF has a gray ring and OFF text. The control also supports keyboard activation, a visible focus indicator, disabling during pending operations, and cancelling a pointer press dragged outside the circle. Details remains secondary.
+
+All 33 existing tests passed after adapting the GUI assertions. The actual compiled installer/application smoke test checked green/ON and gray/OFF against the persisted delegation setting, along with the existing admission, generation and saved-result checks using a fake backend. On the real development PC, the final installer updated the application, preserved all 19 existing job files and the previous real result, and the actual EXE reported the OFF control with Details hidden. No real model generation was added for this UI update.
+
 ## Guided installer 0.4.1
 
 All 33 source tests passed, including the guided wizard, migration from a registered source installation instead of an accidentally created GUI profile, preserving unrelated configuration/data, owned Startup migration with backup, refusal of customized Skills and active jobs, rollback after a simulated service-start failure, and rejecting an unsafe installer archive. The prior tests remain in the suite.

@@ -1,6 +1,6 @@
 # 普段はON/OFFだけ
 
-依頼・資料の受け渡し・結果の受け取りはCodexの会話で行います。GUIの日常操作は、主画面の「ローカル分担」の切り替えだけです。初期状態はOFFです。
+依頼・資料の受け渡し・結果の受け取りはCodexの会話で行います。GUIの日常操作は、主画面の「ローカル分担」の切り替えだけです。中央の大きな電源ボタンを押して切り替えます。ONは周囲が緑、OFFはグレーになり、ボタン内の文字でも状態が分かります。Tabで選んでEnter/Spaceでも操作できます。初期状態はOFFです。
 
 |切り替え|動作|
 |---|---|
@@ -11,7 +11,7 @@ ONでも「今回は使わない」「この会話では使わない」という
 
 ## 初回だけ設定する
 
-1. [Windowsインストーラ](https://github.com/o0w0v/orchestrator-local/releases/download/v0.4.1/OrchestratorLocal-0.4.1-Setup.exe)を開きます。ZIPの手動展開は不要です。
+1. [Windowsインストーラ](https://github.com/o0w0v/orchestrator-local/releases/download/v0.5.0/OrchestratorLocal-0.5.0-Setup.exe)を開きます。ZIPの手動展開は不要です。
 2. セットアップの「次へ」で進み、検出したOllama・保存先を確認して「インストールする」を押します。
 3. Codexを再起動し、新しい会話を開きます。
 4. スタートメニューのOrchestrator Localを開き、使いたいときにONにしてください。

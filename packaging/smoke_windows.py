@@ -84,7 +84,8 @@ async def check(folder):
                                 assert ui_state['details_hidden'] and ui_state['local_enabled'] and ui_state['toggle_label'] == 'OFFにする'
                                 assert ui_state['configured'] and ui_state['jobs'] == 1
                                 assert ui_state['states'] == ['AIの確認待ち']
-                                assert ui_state['home_requested_height'] < 280 and ui_state['setup_requested_height'] < 630
+                                assert ui_state['home_requested_height'] < 440 and ui_state['setup_requested_height'] < 630
+                                assert ui_state['power_ring']=='#22a45a' and ui_state['power_state']=='ON'
                                 controller.set_enabled(False)
                                 assert not (await call(session, 'local_status'))['local_dispatch']['enabled']
                                 rejected = await session.call_tool('start_job', arguments={'request_key':'off-after','request':'開始しない'})
@@ -97,6 +98,7 @@ async def check(folder):
                                 off_ui = json.loads(ui.read_text(encoding='utf8'))
                                 assert off_ui['states'] == ['完了'] and off_ui['details_hidden']
                                 assert not off_ui['local_enabled'] and off_ui['toggle_label'] == 'ONにする'
+                                assert off_ui['power_ring']=='#cbd2dc' and off_ui['power_state']=='OFF'
                     diagnostics = (root / 'mcp.stderr.log').read_text(encoding='utf8')
                     assert 'Traceback' not in diagnostics, diagnostics
                     assert Backend.calls == before + 1
@@ -120,7 +122,7 @@ def main():
     args = p.parse_args()
     if args.installer:
         with tempfile.TemporaryDirectory(prefix='orchestrator installer with spaces ') as tmp:
-            root=Path(tmp);destination=root/'Programs/0.4.1';receipt=root/'installer.json'
+            root=Path(tmp);destination=root/'Programs/0.5.0';receipt=root/'installer.json'
             subprocess.run([str(args.installer.resolve()),'--check-payload','--destination',str(destination),
                             '--menu-folder',str(root/'menu'),'--report',str(receipt)],check=True,timeout=60)
             assert json.loads(receipt.read_text())['result']=='PASS'

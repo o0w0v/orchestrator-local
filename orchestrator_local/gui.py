@@ -11,6 +11,7 @@ import webbrowser
 
 from .desktop import DesktopController, discover_ollama
 from .paths import default_data_dir, resource_root
+from .power_button import PowerButton
 
 STATES = {'QUEUED': '待機中', 'RUNNING': '作業中', 'CANDIDATE_READY': 'AIの確認待ち',
           'COMPLETED': '完了', 'CANCELLED': '中止', 'INTERRUPTED': '中断', 'FAILED': '失敗'}
@@ -33,7 +34,7 @@ class App:
         self.refresh_timer = None
         self.action_buttons = []
         root.title('Orchestrator Local')
-        root.geometry('560x400'); root.minsize(520, 380)
+        root.geometry('460x570'); root.minsize(440, 550)
         root.configure(bg='#f3f5f9')
         style = ttk.Style(root)
         style.theme_use('clam')
@@ -51,8 +52,8 @@ class App:
         style.configure('Treeview.Heading', font=(FONT, 10, 'bold'), padding=8)
         style.configure('TNotebook.Tab', padding=(18, 10))
         header = ttk.Frame(root, padding=(26, 20, 26, 12)); header.pack(fill='x')
-        ttk.Label(header, text='Orchestrator Local', style='Title.TLabel').pack(anchor='w')
-        ttk.Label(header, text='いつものAIへの頼み方はそのまま。PC内のAIと作業を分担。', style='Subtitle.TLabel').pack(anchor='w', pady=(4, 0))
+        ttk.Label(header, text='Orchestrator Local', style='Title.TLabel').pack()
+        ttk.Label(header, text='いつものAIに、PC内のAIをプラス。', style='Subtitle.TLabel').pack(pady=(4, 0))
         self.home = ttk.Frame(root, padding=(24, 4, 24, 8)); self.home.pack(fill='x')
         self.details = ttk.Frame(root, padding=(24, 0, 24, 0))
         self.button(self.details, '← ON/OFFに戻る', self.toggle_details).pack(anchor='w', pady=(0, 8))
@@ -61,7 +62,7 @@ class App:
         self.setup_page = ttk.Frame(self.tabs, padding=20)
         self.tabs.add(self.setup_page, text='設定'); self.tabs.add(self.history, text='履歴')
         self.message = tk.StringVar(value='状態を確認しています…')
-        ttk.Label(root, textvariable=self.message, style='Subtitle.TLabel', wraplength=500, padding=(26, 8)).pack(side='bottom', fill='x')
+        ttk.Label(root, textvariable=self.message, style='Subtitle.TLabel', wraplength=390, padding=(26, 8), justify='center', anchor='center').pack(side='bottom', fill='x')
         self._home(); self._history(); self._setup()
         root.protocol('WM_DELETE_WINDOW', self.close)
         self.root.after(100, self._drain)
@@ -73,17 +74,18 @@ class App:
         return b
 
     def _home(self):
-        card = ttk.Frame(self.home, style='Card.TFrame', padding=18); card.pack(fill='x')
         self.headline = tk.StringVar(value='準備状況を確認中')
         self.detail = tk.StringVar()
-        ttk.Label(card, textvariable=self.headline, style='CardTitle.TLabel').pack(anchor='w')
-        ttk.Label(card, textvariable=self.detail, style='Card.TLabel', wraplength=450).pack(anchor='w', pady=(8, 14))
-        row = ttk.Frame(card, style='Card.TFrame'); row.pack(fill='x')
-        self.dispatch_button = self.button(row, 'ONにする', self.toggle_dispatch, True)
-        self.dispatch_button.pack(side='left', padx=(0, 8))
-        self.button(row, '詳細', self.toggle_details).pack(side='left')
-        ttk.Label(self.home, text='普段の依頼と結果の受け取りはCodexの会話で。\nONでも「今回は使わない」という指示を優先します。\n切り替えは同じ保存先を使う会話で共通です。',
-                  style='Subtitle.TLabel', wraplength=480).pack(anchor='w', pady=(12, 0))
+        self.dispatch_button = PowerButton(self.home, self.toggle_dispatch)
+        self.action_buttons.append(self.dispatch_button)
+        self.dispatch_button.pack(pady=(0, 4))
+        ttk.Label(self.home, textvariable=self.headline, font=(FONT, 14, 'bold')).pack()
+        ttk.Label(self.home, textvariable=self.detail, wraplength=360, justify='center').pack(fill='x', pady=(8, 4))
+        self.power_hint = tk.StringVar(value='クリックしてONにする')
+        ttk.Label(self.home, textvariable=self.power_hint, style='Subtitle.TLabel').pack(pady=(4, 12))
+        self.button(self.home, '詳細・設定', self.toggle_details).pack()
+        ttk.Label(self.home, text='依頼はCodexの会話で。切り替えは全会話で共通です。',
+                  style='Subtitle.TLabel', wraplength=370, justify='center').pack(pady=(12, 0))
 
     def toggle_details(self, show=None):
         show = not bool(self.details.winfo_manager()) if show is None else show
@@ -94,7 +96,7 @@ class App:
         else:
             self.details.pack_forget()
             self.home.pack(fill='x')
-            self.root.minsize(520, 380); self.root.geometry('560x400')
+            self.root.minsize(440, 550); self.root.geometry('460x570')
 
     def open_setup(self):
         if self.wizard is not None:
@@ -215,16 +217,19 @@ class App:
         self.state = state
         if not state['configured']:
             self.headline.set('初回設定が必要です')
-            self.dispatch_button.configure(text='初回設定')
+            self.dispatch_button.set_value(False, '初回設定')
+            self.power_hint.set('クリックして初回設定へ')
             self.detail.set('初回設定の後は、この画面のON/OFFだけで切り替えられます。')
         else:
             enabled = state['local_dispatch']['enabled']
             running = state['service']['ready']
             connected = state['connection'] == 'registered'
-            self.dispatch_button.configure(text='OFFにする' if enabled else ('ONにする' if connected else '初回設定'))
+            label = 'OFFにする' if enabled else ('ONにする' if connected else '初回設定')
+            self.dispatch_button.set_value(enabled, label)
+            self.power_hint.set('クリックして' + ('OFFにする' if enabled else ('ONにする' if connected else '初回設定へ')))
             self.headline.set('ローカル分担 ON' if enabled else 'ローカル分担 OFF')
             if enabled:
-                detail = '対応する作業では、必要に応じてPC内のGemmaへ分担します。'
+                detail = '対応する作業をPC内のAIに分担します。'
                 if not connected: detail = '接続登録が必要です。「詳細」の設定を確認してください。'
                 elif not running: detail = '実行サービスが停止しています。「詳細」で起動できます。'
                 elif state['service'].get('control_version') != 1: detail = '旧版サービスが動作中です。「詳細」で停止してからONにしてください。'
@@ -232,7 +237,7 @@ class App:
                 if backend.get('reachable') and not backend.get('digest_matches'):
                     detail = '設定したモデルがないか、版が異なります。「詳細」の設定を確認してください。'
             else:
-                detail = '新しいGemma作業は始めず、通常のCodexで処理します。'
+                detail = '通常のCodexで処理します。'
             control = state['local_dispatch']
             if not enabled and (control['running'] or control['queued']):
                 detail += f"\n進行中{control['running']}件は継続し、待機{control['queued']}件はONまで保留します。"
@@ -258,7 +263,7 @@ class App:
         if selection and self.tree.exists(selection[0]): self.tree.selection_set(selection[0])
         self._selected_detail()
         if self.message.get() == '状態を確認しています…':
-            self.message.set('初回設定を行ってください。' if not state['configured'] else '状態を更新しました。')
+            self.message.set('初回設定を行ってください。' if not state['configured'] else '')
         self.schedule_refresh()
 
     def selected(self):
@@ -348,6 +353,8 @@ def main():
                 'states': [app.tree.item(j)['values'][-1] for j in app.tree.get_children()],
                 'home_requested_height': app.home.winfo_reqheight(), 'setup_requested_height': app.setup_page.winfo_reqheight(),
                 'details_hidden': not bool(app.details.winfo_manager()), 'toggle_label': app.dispatch_button['text'],
+                'power_ring': app.dispatch_button.itemcget('ring', 'outline'),
+                'power_state': app.dispatch_button.itemcget('state_label', 'text'),
                 'local_enabled': app.state.get('local_dispatch', {}).get('enabled', False),
                 'tabs': [app.tabs.tab(t, 'text') for t in app.tabs.tabs()]}, ensure_ascii=False), encoding='utf8')
             app.close()
