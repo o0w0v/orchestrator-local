@@ -2,33 +2,40 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 import time
 
-import httpx
+from .health import backend_status
+import anyio
 from mcp.server.fastmcp import FastMCP
+from mcp.server.stdio import stdio_server
 
 from .core import Store,UserError,artifact_schema,input_document,packed,parse,read_settings,sha,validate_artifact
 from .worker import reap_interrupted
 from .service import status as service_status
 
 
+class ProcessMCP(FastMCP):
+    async def run_stdio_async(self):
+        # SDK 1.30's default UTF-8 wrappers can close the original stdout
+        # buffer at EOF. Own duplicates so source Python and the frozen
+        # bootloader can both flush/close their original streams normally.
+        with os.fdopen(os.dup(sys.stdin.fileno()), 'r', encoding='utf8', errors='replace') as stdin, os.fdopen(os.dup(sys.stdout.fileno()), 'w', encoding='utf8', newline='\n') as stdout:
+            async with stdio_server(stdin=anyio.wrap_file(stdin), stdout=anyio.wrap_file(stdout)) as (reader, writer):
+                await self._mcp_server.run(reader, writer, self._mcp_server.create_initialization_options())
+
+
 def create_server(config_path=None):
     settings=read_settings(config_path)
     store=Store(settings)
-    mcp=FastMCP("Orchestrator Local",instructions="合意済みのCSV/JSON作業を既存Gemmaに渡し、会話側が元資料で確認して保存する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
+    mcp=ProcessMCP("Orchestrator Local",instructions="合意済みのCSV/JSON作業を既存Gemmaに渡し、会話側が元資料で確認して保存する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def local_status() -> dict:
         """生成せずにLocal接続、保存先、最近のジョブを確認する。"""
         reap_interrupted(store)
-        try:
-            with httpx.Client(base_url=settings["ollama_url"],trust_env=False,timeout=3) as client:
-                v=client.get("/api/version"); v.raise_for_status()
-                t=client.get("/api/tags"); t.raise_for_status()
-                found=next((m for m in t.json()["models"] if m["name"]==settings["model"]),None)
-            backend={"reachable":True,"version":v.json().get("version"),"model_installed":bool(found),"digest_matches":bool(found) and (not settings.get("model_digest") or found["digest"]==settings["model_digest"])}
-        except httpx.HTTPError:
-            backend={"reachable":False,"auto_start_on_job":settings.get("auto_start_ollama",False)}
+        backend=backend_status(settings)
         with store.connection() as db:
             jobs=[dict(r) for r in db.execute("SELECT id,state,phase,created,saved_path FROM jobs ORDER BY created DESC LIMIT 8")]
         return {"model":settings["model"],"service":service_status(settings),"backend":backend,"input_roots":settings["input_roots"],"data_dir":settings["data_dir"],"jobs":jobs,"cloud_api_calls":0,"conversation_Credits":None}
@@ -49,7 +56,7 @@ def create_server(config_path=None):
         reap_interrupted(store)
         service=service_status(settings)
         if not service['ready']:
-            raise UserError("ローカル実行サービスが停止しています。start-service.ps1で起動してください")
+            raise UserError("ローカル実行サービスが停止しています。Orchestrator Local画面の「起動」で起動してください")
         row,created=store.create(request_key,request,inputs,input_paths,data_schema,csv_exports)
         if created:
             store.update(row['id'],worker_pid=service['pid'])

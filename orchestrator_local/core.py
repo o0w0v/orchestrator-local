@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from jsonschema import Draft202012Validator
+from .paths import default_config
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 LIVE = {"QUEUED", "RUNNING"}
@@ -132,9 +133,9 @@ def patch_artifact(candidate, changes, schema):
 
 
 def read_settings(path=None):
-    path = Path(path or os.environ.get("ORCHESTRATOR_LOCAL_CONFIG", PACKAGE_ROOT / "local-settings.json")).resolve()
+    path = Path(path or os.environ.get("ORCHESTRATOR_LOCAL_CONFIG", default_config())).resolve()
     if not path.is_file():
-        raise UserError("初期設定がありません。setup_local.pyを実行してください")
+        raise UserError("初期設定がありません。Orchestrator Localの「初回設定」を開いてください")
     settings = parse(path.read_text(encoding="utf-8-sig"))
     endpoint = urlsplit(settings["ollama_url"])
     if endpoint.scheme != "http" or endpoint.hostname not in {"127.0.0.1", "localhost", "::1"} or endpoint.username or endpoint.password or endpoint.path not in {"", "/"} or endpoint.query or endpoint.fragment:

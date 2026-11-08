@@ -1,4 +1,4 @@
-# Orchestrator Local 0.1.0 — Windows向け初期版
+# Orchestrator Local 0.2.0 — Windows向け初期版
 
 > いつものAIへの頼み方はそのまま。作業の一部をPC内のAIに分担させ、クラウドAIの消費を抑えることを目指します。
 
@@ -26,7 +26,15 @@
 
 Windows、Python 3.11以降、既存Ollamaで`gemma4:26b`を実行できるPCが対象。RTX 3080 10GBを搭載したWindows PCで実機確認したが、別PC・全GPUでの動作を確認したものではない。モデルの重み、Ollama、Pythonは配布に含まない。macOS/Linux、ブラウザだけの利用はこの版の動作確認対象外。
 
-## 導入
+## GUI版で始める（Windows x64）
+
+[Windows用ZIPをダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.2.0/OrchestratorLocal-0.2.0-windows-x64.zip)し、すべて展開して`OrchestratorLocal.exe`をダブルクリックしてください。Pythonの手動インストールやコマンド操作は不要です。既存のOllamaとGemma4:26bは必要です。
+
+「初回設定」で保存先・Ollamaを選んで接続を登録し、ホームから起動します。入力資料の追加、作業状況の表示、中止、完成した成果物の表示も画面から行えます。依頼や内容の確認は、これまでどおり会話側で行います。
+
+現在の自動接続先はCodexのMCP・Skillです。登録後は接続を再起動し、新しい会話を開いてください。詳しくは[GUIの使い方・更新方法](docs/GUI_JA.md)を参照。配布ZIPは未署名の初期版です。[リリースとSHA-256](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.2.0)も確認できます。
+
+## ソースから導入する
 
 このリポジトリをcloneまたはZIPで展開し、`pyproject.toml`のあるルートフォルダをPowerShellで開く。
 

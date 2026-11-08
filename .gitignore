@@ -7,3 +7,9 @@ installation-receipt.json
 uninstallation-receipt.json
 validation/
 .coverage
+build/
+dist/
+build-resources/
+*.pyc
+validation-*.log
+validation-*.json
