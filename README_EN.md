@@ -1,4 +1,4 @@
-# Orchestrator Local 0.5.0 — Windows preview
+# Orchestrator Local 0.6.0 — Windows preview
 
 > Keep asking your usual AI as before. Share some of the work with an AI on your PC to reduce Cloud AI consumption.
 
@@ -18,11 +18,17 @@ See the [evaluation summary and original records](docs/EVALUATION_JA.md). This p
 
 The conversation AI handles consultation/design and final review, while Gemma does some of the work. Usable output is kept; necessary corrections are saved as precise edits. The [internal design](DESIGN_JA.md) and the implementation notes below explain this workflow.
 
+## Supported work
+
+CSV/JSON organization, summaries, short reports, and small app code drafts. For example, ask Codex to build a calculator: Codex chooses the scope, Gemma drafts the requested files, and Codex reviews, copies, runs and tests them. The application itself never edits a source repository or executes generated code. Large development tasks still need a scoped handoff or direct Codex work. See the [code workflow](docs/CODE_JA.md).
+
+When custom MCP tools are unavailable in a conversation with shell access, the installed Skill can use its bundled bridge to the same tool handlers. Users do not need to enter commands. Both paths retain the same ON/OFF guard, request deduplication and review/save workflow. This capability check does not establish coding cost savings; conversation-side Credits remain unmeasured.
+
 ## Windows desktop download
 
-Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.5.0/OrchestratorLocal-0.5.0-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; models are not downloaded automatically.
+Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.6.0/OrchestratorLocal-0.6.0-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; models are not downloaded automatically.
 
-The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart Codex once after installation and open a new conversation. Then use the large central power control from the Start menu: a green ring and ON text mean enabled; a gray ring and OFF text mean disabled. Enter and Space also activate the focused control. Initial delegation is OFF. Turning OFF blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.5.0). A portable ZIP remains available.
+The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart Codex once after installation and open a new conversation. Then use the large central power control from the Start menu: a green ring and ON text mean enabled; a gray ring and OFF text mean disabled. Enter and Space also activate the focused control. Initial delegation is OFF. Turning OFF blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.6.0). A portable ZIP remains available.
 
 ## Source installation
 

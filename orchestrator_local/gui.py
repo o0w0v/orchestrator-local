@@ -32,6 +32,7 @@ class App:
         self.wizard = None
         self.setup_requested = False
         self.refresh_timer = None
+        self.drain_timer = None
         self.action_buttons = []
         root.title('Orchestrator Local')
         root.geometry('460x570'); root.minsize(440, 550)
@@ -65,7 +66,7 @@ class App:
         ttk.Label(root, textvariable=self.message, style='Subtitle.TLabel', wraplength=390, padding=(26, 8), justify='center', anchor='center').pack(side='bottom', fill='x')
         self._home(); self._history(); self._setup()
         root.protocol('WM_DELETE_WINDOW', self.close)
-        self.root.after(100, self._drain)
+        self.drain_timer = self.root.after(100, self._drain)
         self.refresh()
 
     def button(self, parent, text, command, primary=False):
@@ -172,12 +173,14 @@ class App:
         self.busy = True
         for b in self.action_buttons: b.state(['disabled'])
         if success: self.message.set('処理しています…')
+        events = self.events
         def work():
-            try: self.events.put((True, operation(), success, callback))
-            except Exception as exc: self.events.put((False, str(exc), '', error_callback))
+            try: events.put((True, operation(), success, callback))
+            except Exception as exc: events.put((False, str(exc), '', error_callback))
         self.executor.submit(work)
 
     def _drain(self):
+        self.drain_timer = None
         if self.closed: return
         try:
             ok, result, success, callback = self.events.get_nowait()
@@ -194,7 +197,7 @@ class App:
                 self.message.set('処理を完了できませんでした。')
                 if callback: callback(result)
                 else: messagebox.showerror('Orchestrator Local', result, parent=self.root)
-        self.root.after(100, self._drain)
+        self.drain_timer = self.root.after(100, self._drain)
 
     def refresh(self):
         if self.closed: return
@@ -320,9 +323,22 @@ class App:
         self.message.set('サンプルの依頼文をコピーしました。いつもの会話に貼り付けてください。')
 
     def close(self):
+        if self.closed: return
         self.closed = True
-        self.executor.shutdown(wait=False, cancel_futures=True)
+        for timer in (self.refresh_timer, self.drain_timer):
+            if timer: self.root.after_cancel(timer)
+        # GUI operations are bounded control/status calls, never inference.
+        # Finish them before releasing callbacks and Tcl objects on this thread.
+        self.executor.shutdown(wait=True, cancel_futures=True)
+        while not self.events.empty(): self.events.get_nowait()
+        if self.wizard is not None:
+            self.wizard.closed = True
+            self.wizard = None
         self.root.destroy()
+        self.action_buttons.clear(); self.fields.clear()
+        for name, value in list(vars(self).items()):
+            if isinstance(value, (tk.Misc, tk.Variable)):
+                setattr(self, name, None)
 
 
 def main():

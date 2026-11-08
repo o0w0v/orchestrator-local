@@ -273,7 +273,8 @@ class Store:
             raise UserError("ジョブがありません")
         return dict(row)
 
-    def create(self, request_key, request, inputs=None, input_paths=None, data_schema=None, exports=None, executor="gemma"):
+    def create(self, request_key, request, inputs=None, input_paths=None, data_schema=None, exports=None, executor="gemma",
+               code_paths=None):
         if not isinstance(request_key, str) or not 1 <= len(request_key) <= 128 or not request.strip():
             raise UserError("空でないrequest_keyと元依頼が必要です")
         if len(input_paths or []) > 8:
@@ -281,6 +282,11 @@ class Store:
         payload = {"request":request, "inputs": inputs or {},
                    "files":[input_document(self.settings, p) for p in input_paths or []],
                    "schema":artifact_schema(data_schema), "csv_exports":check_exports(exports or [])}
+        if code_paths is not None:
+            from .code_artifact import source_paths, data_schema as code_schema
+            if data_schema is not None or exports:
+                raise UserError('コード案ではCSVや別のdata_schemaを指定しません')
+            payload.update(work_type='code',code_paths=source_paths(code_paths),schema=artifact_schema(code_schema(code_paths)))
         raw = packed(payload)
         if len(raw.encode("utf-8")) + self.settings["options"]["num_predict"] + 4096 > self.settings["options"]["num_ctx"]:
             raise UserError("入力がLocal上限を超えます。切り捨てずに対象を分割するか直接処理してください")
@@ -340,6 +346,12 @@ class Store:
         out["cancel_requested"] = bool(r["cancel"])
         out["usage"] = parse(r["usage"]) if r["usage"] else None
         out["conversation_Credits"] = None
+        payload=parse(r['payload'])
+        out['work_type']=payload.get('work_type','data')
+        if payload.get('work_type')=='code':
+            out['requested_files']=payload['code_paths']
+            if r['saved_path']:
+                out['source_files']=[str(Path(r['saved_path'])/'source'/p) for p in payload['code_paths']]
         if include_candidate and r["candidate"]:
             out["candidate"] = parse(r["candidate"])
             payload = parse(r["payload"])
@@ -369,6 +381,8 @@ class Store:
             if expected_hash != current_hash:
                 raise UserError("候補が一致しません。最新のhashを取得してください")
             payload = parse(row["payload"])
+            if payload.get('work_type')=='code' and (data_schema is not None or exports is not None):
+                raise UserError('コード案のファイル一覧変更は、新しい依頼として作成してください')
             schema = parse(row['result_schema']) if amend and row['result_schema'] else payload['schema']
             export_spec = parse(row['result_exports']) if amend and row['result_exports'] else payload['csv_exports']
             if data_schema is not None:
@@ -382,20 +396,26 @@ class Store:
             else:
                 raise UserError("ACCEPTか、利用への影響を添えた明示PATCHが必要です")
             validate_artifact(result,schema)
+            if payload.get('work_type')=='code':
+                from .code_artifact import validate as validate_code
+                validate_code(result,payload['code_paths'])
             version = row["revision"] + 1
             parent = self.root/"jobs"/job_id
             temp = parent/('.saving-' + uuid.uuid4().hex)
             temp.mkdir()
             self._export(temp,result,export_spec)
+            if payload.get('work_type')=='code':
+                from .code_artifact import export as export_code
+                export_code(temp,result,payload['code_paths'])
             (temp/"review.json").write_text(packed({"decision":decision,"changes":changes or [],"impact":impact,"expected_hash":expected_hash,"reviewer":"conversation","independent_audit":False,
                 "requested_change":requested_change,"data_schema":schema,"csv_exports":export_spec})+"\n",encoding="utf-8")
-            files={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in temp.iterdir()}
+            files={p.relative_to(temp).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in temp.rglob('*') if p.is_file()}
             (temp/"manifest.json").write_text(packed({"files":files,"artifact_sha256":sha(result)})+"\n",encoding="utf-8")
             dest = parent/(f"result-{version:03d}-" + uuid.uuid4().hex[:8])
             temp.rename(dest)
             db.execute("UPDATE jobs SET state='COMPLETED',phase='保存済み',result=?,result_hash=?,revision=?,saved_path=?,last_review_hash=?,result_schema=?,result_exports=?,updated=? WHERE id=?",
                        (packed(result),sha(result),version,str(dest),action_hash,packed(schema),packed(export_spec),time.time(),job_id))
-            return {"job_id":job_id,"saved_path":str(dest),"files":[str(dest/p.name) for p in dest.iterdir()],"result_hash":sha(result),"revision":version,"reused":False}
+            return {"job_id":job_id,"saved_path":str(dest),"files":[str(p) for p in dest.rglob('*') if p.is_file()],"result_hash":sha(result),"revision":version,"reused":False}
 
     @staticmethod
     def _export(folder,result,exports):

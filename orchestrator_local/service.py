@@ -44,7 +44,7 @@ async def serve(settings):
     async def heartbeat():
         while not stop.exists():
             temp=runtime/f'.service-{os.getpid()}.tmp'
-            temp.write_text(packed({'pid':os.getpid(),'started':started,'heartbeat':time.time(),'config':settings['config_path'],'control_version':1}),encoding='utf8')
+            temp.write_text(packed({'pid':os.getpid(),'started':started,'heartbeat':time.time(),'config':settings['config_path'],'control_version':1,'capabilities':['data','code']}),encoding='utf8')
             os.replace(temp,runtime/'service.json')
             await asyncio.sleep(1)
         if active is not None:

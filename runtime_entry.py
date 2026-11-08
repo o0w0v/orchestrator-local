@@ -8,12 +8,22 @@ from orchestrator_local.paths import default_config
 
 def main(argv=None):
     p = argparse.ArgumentParser()
-    p.add_argument('mode', choices=['mcp', 'service'])
+    p.add_argument('mode', choices=['mcp', 'service', 'call'])
     p.add_argument('--config', type=Path, default=default_config())
     p.add_argument('--background', action='store_true')
     p.add_argument('--status', action='store_true')
     p.add_argument('--stop', action='store_true')
+    p.add_argument('--tool')
+    p.add_argument('--arguments-file',type=Path)
     args = p.parse_args(argv)
+    if args.mode=='call':
+        import json
+        from orchestrator_local.tool_bridge import invoke
+        if not args.tool:p.error('call requires --tool')
+        try:result=invoke(args.config,args.tool,args.arguments_file)
+        except Exception as exc:
+            print(json.dumps({'error':str(exc)[:1200]},ensure_ascii=True));raise SystemExit(1)
+        print(json.dumps(result,ensure_ascii=True));return
     from orchestrator_local.core import read_settings
     settings = read_settings(args.config)
     if args.mode == 'mcp':

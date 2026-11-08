@@ -43,7 +43,7 @@ class SetupWizard:
         self.back.state(['disabled'] if self.page in {0,3} else ['!disabled'])
         if self.page==0:
             self.heading.set('Orchestrator Local を使えるようにする')
-            self.text('いつものCodexへの依頼はそのまま。対応するデータ作業をPC内のAIに分担します。')
+            self.text('いつものCodexへの依頼はそのまま。データ作業や小さなアプリのコード案をPC内のAIに分担します。')
             self.text('以前の導入を見つけました。保存先・モデルの場所・作業履歴を引き継いで更新します。旧版での登録解除は不要です。' if self.plan['existing'] else '必要な場所を確認し、Codexへの接続をまとめて設定します。管理者権限は不要です。')
             self.text('OllamaとGemma4:26bは既存のものを使います。モデルやOllamaを勝手にダウンロードすることはありません。')
             self.next.configure(text='次へ')

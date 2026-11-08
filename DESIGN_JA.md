@@ -5,8 +5,8 @@ flowchart TD
     U[ユーザーの依頼・元資料] --> C[会話側: 必要な条件だけ整理]
     C --> S{小さい仕事を直接処理できるか}
     S -->|直接作成| D[会話側で成果物を作る]
-    D --> SAVE[JSON・共有文・CSVを版別に保存]
-    S -->|Localへ依頼| MCP[MCP start_job]
+    D --> SAVE[データ・共有文・ソースを版別に保存]
+    S -->|Localへ依頼| MCP[MCP またはSkill補助経路]
     MCP --> DB[(SQLite: 依頼・入力・状態)]
     DB --> SERVICE[会話の接続から独立した実行サービス]
     SERVICE --> GEMMA[既存Ollama / Gemma4 26B]
@@ -17,11 +17,16 @@ flowchart TD
     ORIGINAL --> SAVE
     PATCH --> SAVE
     REVIEW -->|不足・直し切れない| HOLD[未解決を伝える]
+    SAVE -->|コード案の場合| COPY[Codexが作業先へ反映・起動・テスト]
 ```
 
 独立したCloud ReviewerやLuna/Terraへの引継ぎを追加しない。会話側のモデルは利用者がアプリで選んだモデルなので、プログラムがSolやeffortを固定するものではない。
 
-`core.py`が入力制限・JSON/schema検証・差分・保存、`server.py`がMCPの8ツール、`service.py`が一重起動とジョブ実行、`worker.py`がOllama接続と中止を担当する。Local候補にshell・ファイル操作・tool実行権限は渡さない。
+`core.py`が入力制限・JSON/schema検証・差分・保存、`server.py`がMCPの9ツール、`service.py`が一重起動とジョブ実行、`worker.py`がOllama接続と中止を担当する。Local候補にshell・ファイル操作・tool実行権限は渡さない。
+
+データ作業は`start_job`、コード案は`start_code_job`を使います。コード案は事前指定した相対パスと内容だけを受け取り、採用時にresult内の`source/`へ書き出します。`code_artifact.py`が絶対パス・親への逸脱・Windows予約名・重複・ファイルとディレクトリの衝突を拒否します。会話側のCodexが確認後に作業先への反映・起動・テストを行います。
+
+専用ツールが会話に公開されない場合は、Skillの`call_tool.ps1`がセットアップ済み`tool-launch.json`を読み、Runtimeの`call`モードから同じFastMCPハンドラを呼びます。ON/OFFや保存ロジックを別実装せず、引数はJSONファイルで渡します。シェルのない会話はこの補助経路を使えません。
 
 元依頼と入力は固定して保存する。同じrequest_keyと入力の再送は同じジョブを返す。候補と保存結果はhashで識別し、古いhashや一致しないbefore、重複・親子の差分、出力形式違反を採用しない。追加修正は新しいresult版へ保存する。
 

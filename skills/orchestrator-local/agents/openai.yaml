@@ -1,7 +1,7 @@
 interface:
   display_name: "Orchestrator Local"
-  short_description: "CSV・JSONの仕事をローカルGemmaへ渡し、確認して成果物を保存する"
-  default_prompt: "$orchestrator-local この資料を整理して、使える一覧と短い共有文を作成してください。"
+  short_description: "データ整理や小規模なコード案をGemmaへ分担し、会話で確認して仕上げる"
+  default_prompt: "$orchestrator-local この依頼のデータ作業やコード案をローカルへ分担し、確認して仕上げてください。"
 dependencies:
   tools:
     - type: "mcp"

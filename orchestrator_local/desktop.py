@@ -103,7 +103,7 @@ class DesktopController:
     def start_service(self):
         settings = self.settings()
         def compatible(state):
-            if state.get('control_version') != 1:
+            if state.get('control_version') != 1 or 'code' not in state.get('capabilities',[]):
                 raise UserError('旧版サービスが起動中です。「詳細」の停止で止めてからONにしてください')
             return state
         current = service_status(settings)

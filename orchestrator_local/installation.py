@@ -12,7 +12,7 @@ import tomlkit
 
 from orchestrator_local.core import Store,read_settings
 
-from orchestrator_local.paths import resource_root, runtime_command
+from orchestrator_local.paths import resource_root, runtime_command, tool_launcher
 
 ROOT=resource_root()
 DIGEST="08ae7ec1744bd7f451c4a530afb39d2673ad9d07a8369b8a33a3613b41212a68"
@@ -58,6 +58,9 @@ def register(settings, codex_config, skill_root, receipt_path=None):
              "previous_sha256":hashlib.sha256(before).hexdigest(),"installed_sha256":hashlib.sha256(after).hexdigest(),
              "skill_path":str(dest),"server_name":"orchestrator_local","restart_connection_required":True}
     Path(receipt_path or _receipt(settings,"installation-receipt.json")).write_text(json.dumps(receipt,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    launcher=Path(settings['config_path']).resolve().parent/'tool-launch.json'
+    launcher.parent.mkdir(parents=True,exist_ok=True)
+    launcher.write_text(json.dumps(tool_launcher(settings),ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     return receipt
 
 

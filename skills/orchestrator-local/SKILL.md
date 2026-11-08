@@ -1,17 +1,21 @@
 ---
 name: orchestrator-local
-description: CSV/JSONの集計・整形や短い共有文を、PC内のGemmaと会話側の確認で作成・保存する。ローカル作業を使う依頼や、このSkillの指定時に使う。Office GUI操作や任意コード実行は対象外。
+description: CSV/JSONの集計・整形や短い共有文、小規模アプリや指定ファイルのコード案を、PC内のGemmaと会話側の確認で作成する。ローカル分担を使う依頼や、このSkillの指定時に使う。
 ---
 
 利用者の「今回は使わない」「この会話では使わない」を優先し、その範囲ではこのSkillを使わず通常のCodexで処理する。後から利用を求められた場合は、その新しい指示に従う。
 
 利用前に`local_status`の`local_dispatch.enabled`を確認する。OFFならLocal作業を開始せず、通常のCodexで処理する。ONでも小さい仕事や対象外の相談を無理にGemmaへ渡さない。
 
-この会話が依頼の整理と最終確認を担当する。別のCloudモデルを呼び出さない。軽い仕事で直接作った方が早ければ、通常どおり作成して`save_direct_result`で保存する。
+この会話が依頼の整理と最終確認を担当する。別のCloudモデルを呼び出さない。軽い仕事で直接作った方が早ければ通常どおり処理し、データ成果物は`save_direct_result`で保存できる。
+
+データ作業には`start_job`を使う。小規模なコード案には`start_code_job`へ元依頼・条件、相対ファイル名の`file_paths`、必要な元ソースを`inputs`で渡す。コード案は`data.files`の`path/content`で返る。会話側が確認・保存した`source/`内のファイルを依頼先へ反映し、起動・必要なテストを行う。Gemmaや実行サービスはリポジトリ操作やコード実行をしない。大きな変更は対象を絞り、分担に向かない仕事は通常のCodexで扱う。
+
+専用MCPツールが会話に見えず、シェルを使えるWindows環境では、[補助経路](references/tool-bridge.md)から同じツールを呼べる。ON/OFF・request_key・確認後の保存は同じ規則に従う。
 
 - ユーザーの元依頼・合意した条件を使う。必要な質問だけ行い、未合意の要件や別の依頼書を増やさない。入力不足を推測で埋めない。
 - Local実行には`start_job`へ元依頼・合意条件、`inputs`または許可フォルダ内の`input_paths`を渡す。会話で読める添付は内容を`inputs`で渡せる。読めない添付の内容を作らない。保存先と接続状態は`local_status`で分かる。
-- 出力は`{"data": {...}, "report_md": "短い共有文"}`。必要なdata構造を`data_schema`で指定できる。CSVは`csv_exports`に`{"name":"details.csv","pointer":"/data/details","columns":["id","quantity"]}`のように指定する。元条件にない列は増やさない。
+- 出力は`{"data": {...}, "report_md": "短い共有文"}`。データ作業のdata構造は`data_schema`で指定できる。CSVは`csv_exports`に`{"name":"details.csv","pointer":"/data/details","columns":["id","quantity"]}`のように指定する。元条件にない列は増やさない。
 - 1依頼に固有の`request_key`を1つ決める。通信のやり直しは同じkey、入力や目的が変わる別依頼は別key。同じジョブを開始し直さず、`get_job(wait_seconds=25)`で待つ。進行の説明は段階が変わった時だけ。ユーザーが中止を求めたら`cancel_job`。
 - `CANDIDATE_READY`で候補と元資料を照合する。使えるなら`finalize_job`の`ACCEPT`で原物保存。利用に支障のある誤りだけ、`path/before/after`の`PATCH`と短い`impact`で直す。依頼にない要件・好みの言い換え・任意改善・採点表を追加しない。
 - 重大な不足や直し切れない問題があれば、その内容を伝える。使えない候補を採用扱いにしない。失敗ジョブを自動再試行したり、全体の再生成で隠したりしない。

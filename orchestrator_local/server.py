@@ -29,7 +29,7 @@ class ProcessMCP(FastMCP):
 def create_server(config_path=None):
     settings=read_settings(config_path)
     store=Store(settings)
-    mcp=ProcessMCP("Orchestrator Local",instructions="利用者の「今回は使わない」「この会話では使わない」を優先し、その範囲ではこのワークフローを使わない。Local分担前にlocal_statusのlocal_dispatch.enabledを確認し、OFFなら通常のCodexで処理する。合意済みのCSV/JSON作業を既存Gemmaに渡し、会話側が元資料で確認して保存する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
+    mcp=ProcessMCP("Orchestrator Local",instructions="利用者の「今回は使わない」「この会話では使わない」を優先し、その範囲ではこのワークフローを使わない。Local分担前にlocal_statusのlocal_dispatch.enabledを確認し、OFFなら通常のCodexで処理する。データ作業はstart_job、小規模コード案はstart_code_jobでGemmaへ渡す。会話側が確認して保存し、コードの反映・起動・テストを担当する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def local_status() -> dict:
@@ -67,6 +67,20 @@ def create_server(config_path=None):
             store.update(row['id'],worker_pid=service['pid'])
         out=store.view(row["id"])
         out["reused"]=not created
+        return out
+
+    @mcp.tool(annotations={"readOnlyHint":False,"destructiveHint":False,"idempotentHint":True,"openWorldHint":False})
+    def start_code_job(request_key: str, request: str, file_paths: list[str], inputs: dict | None=None) -> dict:
+        """Gemmaに小規模なコード案を依頼。相対ファイル名を1〜12件指定する。反映・実行はせず、会話側の確認後に成果物内へ保存する。"""
+        reap_interrupted(store)
+        if not store.dispatch_state()['enabled']:
+            raise UserError('ローカル分担はOFFです。通常のCodexで処理してください')
+        service=service_status(settings)
+        if not service['ready'] or 'code' not in service.get('capabilities',[]):
+            raise UserError('コード案に対応した実行サービスが必要です。Orchestrator Localを更新してONにしてください')
+        row,created=store.create(request_key,request,inputs,code_paths=file_paths)
+        if created:store.update(row['id'],worker_pid=service['pid'])
+        out=store.view(row['id']);out['reused']=not created
         return out
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
