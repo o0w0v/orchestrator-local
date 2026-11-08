@@ -1,0 +1,2 @@
+# orchestrator-local
+いつものAIへの頼み方を保ち、PC内のAIと分担してクラウドAIの消費を抑えるWindows向けツール。
