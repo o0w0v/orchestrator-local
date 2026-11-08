@@ -11,11 +11,14 @@ ONでも「今回は使わない」「この会話では使わない」という
 
 ## 初回だけ設定する
 
-1. [Windows配布版](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.3.0)のZIPを固定の場所へすべて展開し、OrchestratorLocal.exeを開きます。
-2. 「初回設定」または「詳細」の設定で、保存先と既存のollama.exeを選び、「初期設定・接続登録」を押します。モデルを標準の場所に置いている場合、「モデルの場所」は空欄で構いません。
-3. Codex側でMCP接続を再起動し、新しい会話を開きます。普段の画面に戻り、使いたいときにONにしてください。
+1. [Windowsインストーラ](https://github.com/o0w0v/orchestrator-local/releases/download/v0.4.1/OrchestratorLocal-0.4.1-Setup.exe)を開きます。ZIPの手動展開は不要です。
+2. セットアップの「次へ」で進み、検出したOllama・保存先を確認して「インストールする」を押します。
+3. Codexを再起動し、新しい会話を開きます。
+4. スタートメニューのOrchestrator Localを開き、使いたいときにONにしてください。
 
-Pythonは配布版に同梱しています。既存のOllamaと、この版のGemma4:26bを実行できるWindows x64 PCは必要です。Ollamaやモデルの自動ダウンロードはしません。自動接続登録先はCodexのMCP・Skillです。Runtime EXEと_internalも必要なので、起動ファイルだけ移動しないでください。
+依頼例：「このJSONを集計して、一覧と短い報告文を作って」。資料と依頼はCodexの会話へ渡します。GUIへ作業内容を入力する必要はありません。
+
+既存のOllamaと、この版のGemma4:26bを実行できるWindows x64 PCが必要です。Pythonは同梱し、Ollamaやモデルの自動ダウンロードはしません。自動接続先はCodexのMCP・Skillです。
 
 ## 切り替えの効き方
 
@@ -35,11 +38,13 @@ ON/OFFは、その保存先を使う全会話で共通です。切り替えの�
 
 ## 旧版からの更新
 
-旧版でサービスを停止し、自動起動を解除し、接続登録を解除してから、新版を固定の場所へ展開します。ソース版では旧フォルダのREADMEの登録解除手順を使ってください。新版で同じ保存先を選ぶと、以前のジョブ・成果物を引き継げます。既存のSkillに利用者の変更がある場合は自動上書きしません。
+新版のSetup.exeを開くだけで、現在のCodexに登録された旧版を検出します。旧版で登録解除する必要はありません。以前の成果物・履歴・モデル保存場所を引き継ぎ、接続と自動起動を新版に切り替えます。別の保存先へ自動移動はしません。
 
-0.3.0への初回移行時も、ローカル分担はOFFで始まります。旧版サービスが起動中の場合はONにせず、「詳細」で停止してから切り替えてください。設定や成果物を自動削除する操作はありません。
+設定・Skill・自動起動のバックアップは、データ保存先のruntime/setup-backup-*へ残します。利用者が編集したSkillや独自の接続設定は上書きせず案内します。待機中・実行中の作業があれば、完了または中止してから更新してください。更新失敗時には変更した接続・設定・Skill・自動起動を復元します。
 
-EXE版の設定は利用者のLocalAppData/OrchestratorLocal/local-settings.json、データは初回設定で選んだ場所に保存します。既存の保存先は自動変更しません。
+プログラムはLocalAppData/Programs/OrchestratorLocal/版番号へ、設定はLocalAppData/OrchestratorLocal/local-settings.jsonへ配置します。成果物と履歴は以前のデータ保存先に残ります。更新後はOFFから始まります。
+
+ZIP版も利用できます。すべて展開してOrchestratorLocal.exeを開くと同じ案内が始まります。Runtime EXEと_internalを分離しないでください。
 
 ## ソースからの起動・配布版の検証
 
@@ -53,4 +58,4 @@ python -m venv .venv
 .\.venv\Scripts\python.exe packaging/smoke_windows.py dist/OrchestratorLocal --report validation-bundle.json
 ```
 
-テストは一時設定・一時Startupフォルダと仮のHTTPモデルだけを使います。実際のユーザー登録や実モデルは使いません。配布ZIPは未署名のWindows初期版です。
+テストは一時設定・一時Startupフォルダと仮のHTTPモデルだけを使います。実際のユーザー登録や実モデルは使いません。配布版は未署名のWindows初期版です。

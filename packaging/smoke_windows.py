@@ -21,6 +21,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from orchestrator_local.desktop import DesktopController
 from orchestrator_local.installation import initialize
+from orchestrator_local.setup_flow import apply_setup, inspect_setup
 import tomlkit
 
 
@@ -49,7 +50,8 @@ async def check(folder):
             with patch.dict(os.environ, {'PATH': system_path}), patch.object(sys, 'frozen', True, create=True), patch.object(sys, 'executable', str(gui)):
                 try:
                     before = Backend.calls
-                    controller.setup(root / 'data', fake, auto_start=True)
+                    plan=inspect_setup(controller)
+                    apply_setup(controller,plan,plan['data_dir'],plan['ollama_exe'],plan['models'],True)
                     entry = tomlkit.parse(controller.codex_config.read_text(encoding='utf8'))['mcp_servers']['orchestrator_local']
                     assert entry['command'] == str(helper)
                     assert controller.startup()
@@ -114,8 +116,16 @@ async def check(folder):
 
 def main():
     p = argparse.ArgumentParser(); p.add_argument('folder', type=Path); p.add_argument('--report', type=Path)
+    p.add_argument('--installer',type=Path)
     args = p.parse_args()
-    result = asyncio.run(check(args.folder.resolve()))
+    if args.installer:
+        with tempfile.TemporaryDirectory(prefix='orchestrator installer with spaces ') as tmp:
+            root=Path(tmp);destination=root/'Programs/0.4.1';receipt=root/'installer.json'
+            subprocess.run([str(args.installer.resolve()),'--check-payload','--destination',str(destination),
+                            '--menu-folder',str(root/'menu'),'--report',str(receipt)],check=True,timeout=60)
+            assert json.loads(receipt.read_text())['result']=='PASS'
+            result=asyncio.run(check(destination));result['installer_payload']='PASS'
+    else:result = asyncio.run(check(args.folder.resolve()))
     if args.report: args.report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
     print(json.dumps(result, ensure_ascii=False))
 

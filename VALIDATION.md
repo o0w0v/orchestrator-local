@@ -1,5 +1,17 @@
 # Validation of the Windows preview
 
+## Guided installer 0.4.1
+
+All 33 source tests passed, including the guided wizard, migration from a registered source installation instead of an accidentally created GUI profile, preserving unrelated configuration/data, owned Startup migration with backup, refusal of customized Skills and active jobs, rollback after a simulated service-start failure, and rejecting an unsafe installer archive. The prior tests remain in the suite.
+
+The actual single-file Setup EXE was exercised with an isolated destination and Start menu folder. Its installed application then passed the compiled GUI/MCP/fake-generation/save/OFF/singleton/shutdown checks with Python removed from child PATH. This uses temporary profiles and no real models.
+
+A separate one-off acceptance was performed on the development PC's real existing installation, outside the automated suite. The Setup EXE installed the application files, and the same guided setup controller migrated the real Codex connection, Skill and login Startup. All 11 pre-existing job files retained their hashes; the original data and model locations were retained. A fresh MCP connection to the installed Runtime EXE made one real Gemma inventory job: allocation 6 with shortage 1 for the first order, allocation 4 for the next, cancelled order excluded, and remaining stock 2. The conversation checked the candidate and accepted the original, saving JSON, CSV and Markdown without regeneration. The local-delegation preference was returned to OFF. No extra Cloud call was used. Actual EXE rendering against the real profile showed the compact OFF home with Details hidden.
+
+After fixing cancellation during wizard discovery, the final 0.4.1 installer was installed on the same PC and its fresh Runtime connection retrieved the identical saved real result without another generation. All 19 existing job files, including that result, retained their hashes during this final update.
+
+This is not a claim that the already-open Codex conversation reloaded its old connection: Codex still needs a restart and a new conversation after migration. The visible installer click path on a different PC, Windows login/reboot and general prose equivalence have not been independently validated. Private settings, paths, logs and acceptance receipts are not published.
+
 ## Local delegation switch 0.3.0
 
 The default home is a compact ON/OFF control. Setup and history are optional Details panels. The persisted local-delegation preference starts OFF, including when an older job database first gains the control table. The switch retains Skill registration and does not rewrite Codex skill configuration.
