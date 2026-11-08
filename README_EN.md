@@ -1,4 +1,4 @@
-# Orchestrator Local 0.4.1 — Windows preview
+# Orchestrator Local 0.5.0 — Windows preview
 
 > Keep asking your usual AI as before. Share some of the work with an AI on your PC to reduce Cloud AI consumption.
 
@@ -20,9 +20,9 @@ The conversation AI handles consultation/design and final review, while Gemma do
 
 ## Windows desktop download
 
-Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.4.1/OrchestratorLocal-0.4.1-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; models are not downloaded automatically.
+Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.5.0/OrchestratorLocal-0.5.0-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; models are not downloaded automatically.
 
-The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart Codex once after installation and open a new conversation. Then use the ON/OFF control from the Start menu. Initial delegation is OFF. Turning OFF blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.4.1). A portable ZIP remains available.
+The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart Codex once after installation and open a new conversation. Then use the large central power control from the Start menu: a green ring and ON text mean enabled; a gray ring and OFF text mean disabled. Enter and Space also activate the focused control. Initial delegation is OFF. Turning OFF blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.5.0). A portable ZIP remains available.
 
 ## Source installation
 

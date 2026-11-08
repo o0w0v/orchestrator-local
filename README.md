@@ -1,4 +1,4 @@
-# Orchestrator Local 0.4.1 — Windows向け初期版
+# Orchestrator Local 0.5.0 — Windows向け初期版
 
 > いつものAIへの頼み方はそのまま。作業の一部をPC内のAIに分担させ、クラウドAIの消費を抑えることを目指します。
 
@@ -28,7 +28,7 @@ Windowsで、既存Ollamaの`gemma4:26b`を実行できるPCが対象。GUI配�
 
 ## Windowsで始める
 
-[インストーラをダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.4.1/OrchestratorLocal-0.4.1-Setup.exe)して開き、案内に沿って「次へ」で進めてください。管理者権限やPythonの手動導入は不要です。既存のOllamaとGemma4:26bは必要です。
+[インストーラをダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.5.0/OrchestratorLocal-0.5.0-Setup.exe)して開き、案内に沿って「次へ」で進めてください。管理者権限やPythonの手動導入は不要です。既存のOllamaとGemma4:26bは必要です。
 
 1. 検出した保存先・Ollamaを確認し、「インストールする」を押します。
 2. Codexを再起動して、新しい会話を開きます。
@@ -41,11 +41,11 @@ Windowsで、既存Ollamaの`gemma4:26b`を実行できるPCが対象。GUI配�
 |ON|対応する作業で、必要に応じてGemmaへ分担する|
 |OFF|新しいGemma作業を開始せず、通常のCodexで処理する|
 
-依頼と結果の受け取りはCodexの会話で行います。初期状態はOFF。ONでも「今回は使わない」という指示を優先します。設定・履歴は「詳細」にあります。
+依頼と結果の受け取りはCodexの会話で行います。中央の電源ボタンで切り替えます。ONは緑のリング、OFFはグレーで表示し、文字でも状態を確認できます。初期状態はOFF。ONでも「今回は使わない」という指示を優先します。設定・履歴は「詳細」にあります。
 
 ON/OFFは再起動なしで反映します。進行中の作業は継続し、待機中は次にONにするまで保留します。同じ保存先を使う会話で共通です。Skill登録は残ります。
 
-詳しい[使い方と更新](docs/GUI_JA.md)、[リリースとSHA-256](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.4.1)も参照してください。手動配置向けのZIPも残しています。Windows版は未署名の初期版です。
+詳しい[使い方と更新](docs/GUI_JA.md)、[リリースとSHA-256](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.5.0)も参照してください。手動配置向けのZIPも残しています。Windows版は未署名の初期版です。
 
 ## ソースから導入する
 
