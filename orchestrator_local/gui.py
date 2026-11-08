@@ -31,7 +31,7 @@ class App:
         self.refresh_timer = None
         self.action_buttons = []
         root.title('Orchestrator Local')
-        root.geometry('1000x740'); root.minsize(880, 680)
+        root.geometry('560x400'); root.minsize(520, 380)
         root.configure(bg='#f3f5f9')
         style = ttk.Style(root)
         style.theme_use('clam')
@@ -40,7 +40,7 @@ class App:
         style.map('TButton', background=[('active', '#d5dfed')])
         style.configure('Primary.TButton', background='#245fc4', foreground='white')
         style.map('Primary.TButton', background=[('active', '#194b9f'), ('disabled', '#9fb4d8')])
-        style.configure('Title.TLabel', font=(FONT, 24, 'bold'))
+        style.configure('Title.TLabel', font=(FONT, 20, 'bold'))
         style.configure('Subtitle.TLabel', foreground='#56647b')
         style.configure('Card.TFrame', background='white')
         style.configure('Card.TLabel', background='white')
@@ -51,13 +51,15 @@ class App:
         header = ttk.Frame(root, padding=(26, 20, 26, 12)); header.pack(fill='x')
         ttk.Label(header, text='Orchestrator Local', style='Title.TLabel').pack(anchor='w')
         ttk.Label(header, text='いつものAIへの頼み方はそのまま。PC内のAIと作業を分担。', style='Subtitle.TLabel').pack(anchor='w', pady=(4, 0))
-        self.tabs = ttk.Notebook(root); self.tabs.pack(fill='both', expand=True, padx=24)
-        self.home = ttk.Frame(self.tabs, padding=20)
+        self.home = ttk.Frame(root, padding=(24, 4, 24, 8)); self.home.pack(fill='x')
+        self.details = ttk.Frame(root, padding=(24, 0, 24, 0))
+        self.button(self.details, '← ON/OFFに戻る', self.toggle_details).pack(anchor='w', pady=(0, 8))
+        self.tabs = ttk.Notebook(self.details); self.tabs.pack(fill='both', expand=True)
         self.history = ttk.Frame(self.tabs, padding=16)
         self.setup_page = ttk.Frame(self.tabs, padding=20)
-        self.tabs.add(self.home, text='ホーム'); self.tabs.add(self.history, text='作業履歴'); self.tabs.add(self.setup_page, text='初回設定')
+        self.tabs.add(self.setup_page, text='設定'); self.tabs.add(self.history, text='履歴')
         self.message = tk.StringVar(value='状態を確認しています…')
-        ttk.Label(root, textvariable=self.message, style='Subtitle.TLabel', wraplength=940, padding=(26, 12)).pack(fill='x')
+        ttk.Label(root, textvariable=self.message, style='Subtitle.TLabel', wraplength=500, padding=(26, 8)).pack(side='bottom', fill='x')
         self._home(); self._history(); self._setup()
         root.protocol('WM_DELETE_WINDOW', self.close)
         self.root.after(100, self._drain)
@@ -69,26 +71,40 @@ class App:
         return b
 
     def _home(self):
-        card = ttk.Frame(self.home, style='Card.TFrame', padding=20); card.pack(fill='x')
+        card = ttk.Frame(self.home, style='Card.TFrame', padding=18); card.pack(fill='x')
         self.headline = tk.StringVar(value='準備状況を確認中')
         self.detail = tk.StringVar()
         ttk.Label(card, textvariable=self.headline, style='CardTitle.TLabel').pack(anchor='w')
-        ttk.Label(card, textvariable=self.detail, style='Card.TLabel', wraplength=860).pack(anchor='w', pady=(8, 14))
+        ttk.Label(card, textvariable=self.detail, style='Card.TLabel', wraplength=450).pack(anchor='w', pady=(8, 14))
         row = ttk.Frame(card, style='Card.TFrame'); row.pack(fill='x')
-        self.button(row, '起動', self.start, True).pack(side='left', padx=(0, 8))
-        self.button(row, '停止', self.stop).pack(side='left', padx=(0, 8))
-        self.button(row, '状態を更新', self.refresh).pack(side='left')
-        ttk.Label(self.home, text='1. 資料を用意する', font=(FONT, 13, 'bold')).pack(anchor='w', pady=(22, 8))
-        row = ttk.Frame(self.home); row.pack(fill='x')
-        self.button(row, '入力ファイルを追加', self.import_inputs).pack(side='left', padx=(0, 8))
-        self.button(row, '入力フォルダを開く', lambda: self.open_folder('inbox')).pack(side='left')
-        ttk.Label(self.home, text='CSV・JSON・TXT・MDに対応。追加するだけではAIの作業は始まりません。', style='Subtitle.TLabel').pack(anchor='w', pady=6)
-        ttk.Label(self.home, text='2. いつもの会話で依頼する', font=(FONT, 13, 'bold')).pack(anchor='w', pady=(15, 8))
-        ttk.Label(self.home, text='依頼内容を伝えると、会話側のAIが分担と結果の確認を行います。\n最初はサンプルの依頼文をコピーして試せます。', wraplength=860).pack(anchor='w')
-        self.button(self.home, 'サンプルの依頼文をコピー', self.copy_example).pack(anchor='w', pady=8)
-        ttk.Label(self.home, text='3. 完成したファイルを受け取る', font=(FONT, 13, 'bold')).pack(anchor='w', pady=(12, 8))
-        self.button(self.home, '作業履歴を見る', lambda: self.tabs.select(self.history)).pack(anchor='w')
-        ttk.Label(self.home, text='「AIの確認待ち」の候補は、会話側で確認・保存すると「完了」になります。', style='Subtitle.TLabel').pack(anchor='w', pady=6)
+        self.dispatch_button = self.button(row, 'ONにする', self.toggle_dispatch, True)
+        self.dispatch_button.pack(side='left', padx=(0, 8))
+        self.button(row, '詳細', self.toggle_details).pack(side='left')
+        ttk.Label(self.home, text='普段の依頼と結果の受け取りはCodexの会話で。\nONでも「今回は使わない」という指示を優先します。\n切り替えは同じ保存先を使う会話で共通です。',
+                  style='Subtitle.TLabel', wraplength=480).pack(anchor='w', pady=(12, 0))
+
+    def toggle_details(self, show=None):
+        show = not bool(self.details.winfo_manager()) if show is None else show
+        if show:
+            self.home.pack_forget()
+            self.details.pack(fill='both', expand=True)
+            self.root.minsize(880, 720); self.root.geometry('1000x800')
+        else:
+            self.details.pack_forget()
+            self.home.pack(fill='x')
+            self.root.minsize(520, 380); self.root.geometry('560x400')
+
+    def open_setup(self):
+        self.toggle_details(True); self.tabs.select(self.setup_page)
+
+    def toggle_dispatch(self):
+        if not self.state['configured']:
+            self.open_setup(); return
+        enabled = not self.state['local_dispatch']['enabled']
+        if enabled and self.state.get('connection') != 'registered':
+            self.open_setup(); return
+        message = 'ローカル分担をONにしました。' if enabled else 'ローカル分担をOFFにしました。通常のCodexで処理します。'
+        self.run(lambda: self.controller.set_enabled(enabled), message)
 
     def _history(self):
         ttk.Label(self.history, text='最近の作業（最大200件）', font=(FONT, 13, 'bold')).pack(anchor='w', pady=(0, 12))
@@ -104,6 +120,10 @@ class App:
         row = ttk.Frame(self.history); row.pack(fill='x')
         self.button(row, '完成した成果物を開く', lambda: self.open_folder('result')).pack(side='left', padx=(0, 8))
         self.button(row, '選択した作業を中止', self.cancel).pack(side='left')
+        row = ttk.Frame(self.history); row.pack(fill='x', pady=(8, 0))
+        self.button(row, '入力ファイルを追加', self.import_inputs).pack(side='left', padx=(0, 8))
+        self.button(row, '入力フォルダを開く', lambda: self.open_folder('inbox')).pack(side='left', padx=(0, 8))
+        self.button(row, 'サンプル依頼文をコピー', self.copy_example).pack(side='left')
 
     def _setup(self):
         ttk.Label(self.setup_page, text='最初の一度だけ、接続と保存先を設定します。', font=(FONT, 13, 'bold')).pack(anchor='w')
@@ -123,12 +143,14 @@ class App:
         self.autostart = tk.BooleanVar(value=False)
         ttk.Checkbutton(self.setup_page, text='PCへのログイン時に実行サービスを自動起動する', variable=self.autostart).pack(anchor='w', pady=8)
         row = ttk.Frame(self.setup_page); row.pack(fill='x', pady=8)
-        self.button(row, '設定を保存して接続を登録', self.setup, True).pack(side='left', padx=(0, 8))
+        self.button(row, '初期設定・接続登録', self.setup, True).pack(side='left', padx=(0, 8))
         self.button(row, '自動起動の設定を適用', self.apply_startup).pack(side='left')
         self.connection = tk.StringVar(value='未設定')
         ttk.Label(self.setup_page, textvariable=self.connection, wraplength=860).pack(anchor='w', pady=10)
         row = ttk.Frame(self.setup_page); row.pack(fill='x', pady=8)
         self.button(row, '接続登録を解除', self.unregister).pack(side='left', padx=(0, 8))
+        self.button(row, '実行サービスを起動', self.start).pack(side='left', padx=(0, 8))
+        self.button(row, '実行サービスを停止', self.stop).pack(side='left', padx=(0, 8))
         self.button(row, 'ログフォルダを開く', lambda: self.open_folder('logs')).pack(side='left', padx=(0, 8))
         self.button(row, '使い方を開く', lambda: webbrowser.open('https://github.com/o0w0v/orchestrator-local#readme')).pack(side='left')
         ttk.Label(self.setup_page, text='設定ファイル：' + str(self.controller.config), style='Subtitle.TLabel', wraplength=860).pack(anchor='w', pady=8)
@@ -186,33 +208,38 @@ class App:
     def render(self, state):
         self.state = state
         if not state['configured']:
-            self.headline.set('初回設定を始めましょう')
-            self.detail.set('「初回設定」タブで保存先と接続を登録すると、会話から作業を依頼できます。')
-            if not self.initial_fields: self.tabs.select(self.setup_page)
+            self.headline.set('初回設定が必要です')
+            self.dispatch_button.configure(text='初回設定')
+            self.detail.set('初回設定の後は、この画面のON/OFFだけで切り替えられます。')
         else:
+            enabled = state['local_dispatch']['enabled']
             running = state['service']['ready']
             connected = state['connection'] == 'registered'
-            self.headline.set('利用できる状態です' if running and connected else ('接続登録が必要です' if not connected else '実行サービスは停止中です'))
-            backend = state['backend'] or {}
-            if not backend.get('reachable'):
-                detail = 'Gemmaの準備状況は未確認です。Ollama停止中は、作業依頼時に既存Ollamaを起動します。'
-                if running and connected: self.headline.set('接続済み・Gemmaは依頼時に確認します')
-            elif not backend.get('model_installed'):
-                detail = '設定したGemmaが見つかりません。既存Ollamaのモデルを確認してください。'
-                self.headline.set('モデルの準備が必要です')
-            elif not backend.get('digest_matches'):
-                detail = 'モデルの版が設定と異なります。この状態では生成せず停止します。'
-                self.headline.set('モデルの版を確認してください')
+            self.dispatch_button.configure(text='OFFにする' if enabled else ('ONにする' if connected else '初回設定'))
+            self.headline.set('ローカル分担 ON' if enabled else 'ローカル分担 OFF')
+            if enabled:
+                detail = '対応する作業では、必要に応じてPC内のGemmaへ分担します。'
+                if not connected: detail = '接続登録が必要です。「詳細」の設定を確認してください。'
+                elif not running: detail = '実行サービスが停止しています。「詳細」で起動できます。'
+                elif state['service'].get('control_version') != 1: detail = '旧版サービスが動作中です。「詳細」で停止してからONにしてください。'
+                backend = state['backend'] or {}
+                if backend.get('reachable') and not backend.get('digest_matches'):
+                    detail = '設定したモデルがないか、版が異なります。「詳細」の設定を確認してください。'
             else:
-                detail = 'Gemmaの準備を確認できました。いつもの会話から依頼できます。'
-            if not running: detail = '「起動」を押して実行サービスを開始してください。 ' + detail
+                detail = '新しいGemma作業は始めず、通常のCodexで処理します。'
+            control = state['local_dispatch']
+            if not enabled and (control['running'] or control['queued']):
+                detail += f"\n進行中{control['running']}件は継続し、待機{control['queued']}件はONまで保留します。"
             self.detail.set(detail)
             label = {'registered': 'この導入先の接続を登録済み', 'missing': '接続未登録', 'other_installation': '別の導入先が登録されています。旧版で登録解除してから移行してください。', 'invalid': '接続設定を読み取れませんでした。'}[state['connection']]
             self.connection.set(label)
             if not self.initial_fields:
                 saved = state['settings']; self.data_dir.set(saved['data_dir']); self.ollama_exe.set(saved.get('ollama_exe', '')); self.models.set(saved.get('ollama_environment', {}).get('OLLAMA_MODELS', ''))
             for field in self.fields: field.state(['disabled'])
-        if not self.initial_fields: self.autostart.set(state.get('startup', False))
+        if not self.initial_fields:
+            self.autostart.set(state.get('startup', False))
+            if self.auto_refresh and state['configured'] and state['local_dispatch']['enabled'] and not state['service']['ready'] and state['connection'] == 'registered':
+                self.root.after_idle(self.start)
         self.initial_fields = True
         selection = self.tree.selection()
         self.tree.delete(*self.tree.get_children())
@@ -234,7 +261,7 @@ class App:
         self.job_detail.set((job.get('error') or job.get('phase') or '') if job else '作業を選択してください。')
 
     def start(self):
-        if not self.state['configured']: self.tabs.select(self.setup_page); return
+        if not self.state['configured']: self.open_setup(); return
         self.run(self.controller.start_service, '実行サービスを起動しました。待機中は生成しません。')
 
     def stop(self):
@@ -262,7 +289,7 @@ class App:
         self.run(lambda: self.controller.set_startup(enabled), '自動起動の設定を保存しました。')
 
     def import_inputs(self):
-        if not self.state['configured']: self.tabs.select(self.setup_page); return
+        if not self.state['configured']: self.open_setup(); return
         paths = filedialog.askopenfilenames(parent=self.root, title='入力資料を選択', filetypes=[('対応資料', '*.csv *.json *.txt *.md')])
         if paths: self.run(lambda: self.controller.import_inputs(paths), '入力資料を追加しました。会話でファイル名と依頼内容を伝えてください。')
 
@@ -305,6 +332,8 @@ def main():
                 'headline': app.headline.get(), 'jobs': len(app.tree.get_children()),
                 'states': [app.tree.item(j)['values'][-1] for j in app.tree.get_children()],
                 'home_requested_height': app.home.winfo_reqheight(), 'setup_requested_height': app.setup_page.winfo_reqheight(),
+                'details_hidden': not bool(app.details.winfo_manager()), 'toggle_label': app.dispatch_button['text'],
+                'local_enabled': app.state.get('local_dispatch', {}).get('enabled', False),
                 'tabs': [app.tabs.tab(t, 'text') for t in app.tabs.tabs()]}, ensure_ascii=False), encoding='utf8')
             app.close()
         root.after(100, report)

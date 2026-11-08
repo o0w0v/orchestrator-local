@@ -103,6 +103,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
                'options':{'num_ctx':65536,'num_predict':32768},'job_timeout_seconds':10,'auto_start_ollama':False}
         self.config.write_text(packed(value),encoding='utf8')
         self.settings=read_settings(self.config);self.store=Store(self.settings)
+        self.store.set_dispatch_enabled(True)
         self.service=subprocess.Popen([sys.executable,'-m','orchestrator_local.service','--config',str(self.config)],cwd=ROOT,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,creationflags=subprocess.CREATE_NO_WINDOW if sys.platform=='win32' else 0)
         from orchestrator_local.service import status
         for _ in range(50):

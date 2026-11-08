@@ -29,16 +29,17 @@ class ProcessMCP(FastMCP):
 def create_server(config_path=None):
     settings=read_settings(config_path)
     store=Store(settings)
-    mcp=ProcessMCP("Orchestrator Local",instructions="合意済みのCSV/JSON作業を既存Gemmaに渡し、会話側が元資料で確認して保存する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
+    mcp=ProcessMCP("Orchestrator Local",instructions="利用者の「今回は使わない」「この会話では使わない」を優先し、その範囲ではこのワークフローを使わない。Local分担前にlocal_statusのlocal_dispatch.enabledを確認し、OFFなら通常のCodexで処理する。合意済みのCSV/JSON作業を既存Gemmaに渡し、会話側が元資料で確認して保存する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def local_status() -> dict:
         """生成せずにLocal接続、保存先、最近のジョブを確認する。"""
         reap_interrupted(store)
-        backend=backend_status(settings)
+        dispatch=store.dispatch_state()
+        backend=backend_status(settings) if dispatch['enabled'] else {'checked':False,'reason':'local_dispatch_off'}
         with store.connection() as db:
             jobs=[dict(r) for r in db.execute("SELECT id,state,phase,created,saved_path FROM jobs ORDER BY created DESC LIMIT 8")]
-        return {"model":settings["model"],"service":service_status(settings),"backend":backend,"input_roots":settings["input_roots"],"data_dir":settings["data_dir"],"jobs":jobs,"cloud_api_calls":0,"conversation_Credits":None}
+        return {"model":settings["model"],"service":service_status(settings),"backend":backend,"local_dispatch":dispatch,"input_roots":settings["input_roots"],"data_dir":settings["data_dir"],"jobs":jobs,"cloud_api_calls":0,"conversation_Credits":None}
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def read_input(path: str) -> dict:
@@ -54,9 +55,13 @@ def create_server(config_path=None):
                   csv_exports: list[dict] | None=None) -> dict:
         """元依頼・合意条件と入力でGemma作業を開始。固有request_keyは通信再送時も同じ値にする。CSV指定はname/pointer/columns。"""
         reap_interrupted(store)
+        if not store.dispatch_state()['enabled']:
+            raise UserError('ローカル分担はOFFです。通常のCodexで処理してください')
         service=service_status(settings)
         if not service['ready']:
-            raise UserError("ローカル実行サービスが停止しています。Orchestrator Local画面の「起動」で起動してください")
+            raise UserError("ローカル実行サービスが停止しています。Orchestrator LocalのON、または詳細の起動を使ってください")
+        if service.get('control_version') != 1:
+            raise UserError('旧版サービスはON/OFFに対応していません。停止して新版を起動してください')
         row,created=store.create(request_key,request,inputs,input_paths,data_schema,csv_exports)
         if created:
             store.update(row['id'],worker_pid=service['pid'])

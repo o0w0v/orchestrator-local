@@ -16,7 +16,7 @@ def main():
         raise SystemExit('Build this distribution on Windows')
     resources = ROOT / 'build-resources'
     licenses = resources / 'licenses'; licenses.mkdir(parents=True, exist_ok=True)
-    notices = ['Orchestrator Local 0.2.0 — third-party components',
+    notices = ['Orchestrator Local 0.3.0 — third-party components',
                'Application source: MIT, see LICENSE. Model weights and Ollama are not bundled.', '']
     python_license = Path(sys.base_prefix) / 'LICENSE.txt'
     if not python_license.is_file():
@@ -37,12 +37,14 @@ def main():
     subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', str(ROOT / 'packaging/windows.spec')], cwd=ROOT, check=True)
     folder = ROOT / 'dist/OrchestratorLocal'
     (folder / 'START_HERE_JA.txt').write_text(
-        'Orchestrator Local 0.2.0\n\nZIPを固定の場所へすべて展開し、OrchestratorLocal.exeをダブルクリックしてください。\n'
-        '初回設定で既存Ollamaと保存先を選び、Codex接続を登録します。\n'
+        'Orchestrator Local 0.3.0\n\nZIPを固定の場所へすべて展開し、OrchestratorLocal.exeをダブルクリックしてください。\n'
+        '「詳細」の設定で既存Ollamaと保存先を選び、Codex接続を登録します。\n'
         '接続を再起動して新しい会話を開き、いつも通り依頼してください。\n'
+        '普段は主画面のローカル分担ON/OFFだけ。初期状態はOFFです。\n'
+        'ONでも「今回は使わない」という会話の指示を優先します。\n'
         'Pythonの別途インストールは不要です。OllamaとGemma4:26bは別途準備が必要です。\n'
         'Runtime.exeと_internalフォルダも必要です。起動ファイルだけ移動しないでください。\n'
-        '画面を閉じても起動済みサービスは継続します。停止は画面の「停止」。\n'
+        '画面を閉じても起動済みサービスは継続します。OFFは新規作業の停止、サービス停止は「詳細」の設定。\n'
         '更新・移動前には旧版の停止、自動起動解除、接続登録解除を行ってください。\n'
         '成果物は残ります。未署名の初期配布版です。\n\n'
         '詳しい説明：https://github.com/o0w0v/orchestrator-local\n', encoding='utf-8-sig')
@@ -54,7 +56,7 @@ def main():
             raise RuntimeError('Private file in build: ' + relative)
         manifest.append({'path': relative, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()})
     (folder / 'FILES.sha256.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
-    archive = ROOT / 'dist/OrchestratorLocal-0.2.0-windows-x64.zip'
+    archive = ROOT / 'dist/OrchestratorLocal-0.3.0-windows-x64.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         for p in sorted(folder.rglob('*')):
             if p.is_file(): z.write(p, 'OrchestratorLocal/' + p.relative_to(folder).as_posix())

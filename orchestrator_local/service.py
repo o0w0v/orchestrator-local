@@ -44,7 +44,7 @@ async def serve(settings):
     async def heartbeat():
         while not stop.exists():
             temp=runtime/f'.service-{os.getpid()}.tmp'
-            temp.write_text(packed({'pid':os.getpid(),'started':started,'heartbeat':time.time(),'config':settings['config_path']}),encoding='utf8')
+            temp.write_text(packed({'pid':os.getpid(),'started':started,'heartbeat':time.time(),'config':settings['config_path'],'control_version':1}),encoding='utf8')
             os.replace(temp,runtime/'service.json')
             await asyncio.sleep(1)
         if active is not None:
@@ -57,6 +57,10 @@ async def serve(settings):
             db.execute("UPDATE jobs SET state='INTERRUPTED',phase='実行中断',error='前の実行サービスが終了しました。自動再生成はしません',updated=? WHERE state='RUNNING'",(time.time(),))
         reap_interrupted(store)
         while not stop.exists():
+            if not store.dispatch_state()['enabled']:
+                reap_interrupted(store)
+                await asyncio.sleep(.2)
+                continue
             with store.connection() as db:
                 row=db.execute("SELECT id FROM jobs WHERE state='QUEUED' AND executor='gemma' ORDER BY created,id LIMIT 1").fetchone()
             if row is None:

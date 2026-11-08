@@ -58,6 +58,7 @@ class DesktopController:
             return {'configured': False, 'jobs': [], 'config': str(self.config)}
         settings = self.settings()
         store = Store(settings)
+        dispatch = store.dispatch_state()
         reap_interrupted(store)
         with store.connection() as db:
             rows = [dict(r) for r in db.execute(
@@ -70,7 +71,8 @@ class DesktopController:
             connection = 'invalid'
         return {'configured': True, 'config': str(self.config), 'settings': settings,
                 'service': service_status(settings), 'connection': connection, 'jobs': rows,
-                'backend': backend_status(settings) if probe else None}
+                'local_dispatch': dispatch,
+                'backend': backend_status(settings) if probe and dispatch['enabled'] else None}
 
     def setup(self, data_dir, ollama_exe, models=None, auto_start=False):
         existed = self.config.exists()
@@ -86,12 +88,27 @@ class DesktopController:
         return receipt
 
     def remove_connection(self):
+        Store(self.settings()).set_dispatch_enabled(False)
         return unregister(self.settings(), self.codex_config, self.skill_root)
+
+    def set_enabled(self, enabled):
+        settings = self.settings()
+        store = Store(settings)
+        if enabled:
+            if self.connection_state(settings) != 'registered':
+                raise UserError('先に「詳細」の設定で、この導入先のCodex接続を登録してください')
+            self.start_service()
+        return store.set_dispatch_enabled(enabled)
 
     def start_service(self):
         settings = self.settings()
-        if service_status(settings)['ready']:
-            return service_status(settings)
+        def compatible(state):
+            if state.get('control_version') != 1:
+                raise UserError('旧版サービスが起動中です。「詳細」の停止で止めてからONにしてください')
+            return state
+        current = service_status(settings)
+        if current['ready']:
+            return compatible(current)
         folder = Path(settings['data_dir']) / 'runtime'
         folder.mkdir(parents=True, exist_ok=True)
         stamp = time.time_ns()
@@ -103,13 +120,13 @@ class DesktopController:
         for _ in range(60):
             state = service_status(settings)
             if state['ready']:
-                return state
+                return compatible(state)
             if process.poll() is not None:
                 # A simultaneous starter can lose the singleton lock to a healthy runner.
                 time.sleep(.2)
                 state = service_status(settings)
                 if state['ready']:
-                    return state
+                    return compatible(state)
                 raise UserError('起動できませんでした。「ログフォルダを開く」から詳細を確認してください')
             time.sleep(.1)
         raise UserError('起動確認が時間内に終わりませんでした。再生成せず状態を再確認してください')

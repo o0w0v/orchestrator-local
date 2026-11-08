@@ -51,7 +51,8 @@ class DesktopTests(unittest.TestCase):
         self.controller.setup(self.data, self.exe, auto_start=sys.platform == 'win32')
         status = self.controller.snapshot()
         self.assertEqual(status['connection'], 'registered')
-        self.assertTrue(status['backend']['digest_matches'])
+        self.assertFalse(status['local_dispatch']['enabled'])
+        self.assertIsNone(status['backend'])
         self.assertFalse(status['service']['ready'])
         if sys.platform == 'win32':
             self.assertTrue(self.controller.startup())
@@ -78,6 +79,7 @@ class DesktopTests(unittest.TestCase):
 
     def test_service_singleton_history_candidate_and_saved_result(self):
         store = Store(self.controller.settings())
+        store.set_dispatch_enabled(True)
         before = Backend.calls
         first = self.controller.start_service(); second = self.controller.start_service()
         self.assertEqual(first['pid'], second['pid'])
@@ -148,7 +150,57 @@ class DesktopTests(unittest.TestCase):
             app.render(snap); root.update_idletasks()
             self.assertEqual(app.tree.item('1'*32)['values'][-1], 'AIの確認待ち')
             self.assertNotIn('採用', ' '.join(str(b['text']) for b in app.action_buttons))
-            self.assertLess(app.home.winfo_reqheight(), 630)
+            self.assertLess(app.home.winfo_reqheight(), 280)
+            self.assertFalse(app.details.winfo_manager())
+            self.assertEqual(app.dispatch_button['text'], '初回設定')
+            app.toggle_details(); self.assertEqual(app.details.winfo_manager(), 'pack')
+            app.toggle_details(); self.assertFalse(app.details.winfo_manager())
+            # OFF must remain available even when the connection was removed.
+            Store(self.controller.settings()).set_dispatch_enabled(True)
+            snap = self.controller.snapshot(probe=False)
+            app.render(snap)
+            self.assertEqual(app.dispatch_button['text'], 'OFFにする')
+            app.dispatch_button.invoke()
+            for _ in range(100):
+                root.update()
+                if not app.busy: break
+                time.sleep(.02)
+            self.assertFalse(Store(self.controller.settings()).dispatch_state()['enabled'])
+        finally:
+            app.close()
+
+    def test_enable_requires_own_connection_and_refuses_legacy_runner(self):
+        store = Store(self.controller.settings())
+        with self.assertRaises(UserError): self.controller.set_enabled(True)
+        self.assertFalse(store.dispatch_state()['enabled'])
+        self.controller.setup(self.data, self.exe)
+        with patch('orchestrator_local.desktop.service_status', return_value={'ready': True, 'pid': 123}):
+            with self.assertRaises(UserError): self.controller.set_enabled(True)
+        self.assertFalse(store.dispatch_state()['enabled'])
+
+    def test_gui_toggle_uses_shared_control_without_generation(self):
+        import tkinter as tk
+        from orchestrator_local.gui import App
+        self.controller.setup(self.data, self.exe)
+        root = tk.Tk(); root.withdraw()
+        app = App(root, self.controller, auto_refresh=False)
+        def settle():
+            for _ in range(300):
+                root.update()
+                if not app.busy: return
+                time.sleep(.02)
+            self.fail('GUI operation timed out')
+        before = Backend.calls
+        try:
+            settle()
+            self.assertFalse(app.state['local_dispatch']['enabled'])
+            app.dispatch_button.invoke(); settle()
+            self.assertTrue(app.state['local_dispatch']['enabled'])
+            self.assertEqual(app.dispatch_button['text'], 'OFFにする')
+            app.dispatch_button.invoke(); settle()
+            self.assertFalse(app.state['local_dispatch']['enabled'])
+            self.assertFalse(app.details.winfo_manager())
+            self.assertEqual(Backend.calls, before)
         finally:
             app.close()
 

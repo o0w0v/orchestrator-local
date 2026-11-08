@@ -1,5 +1,13 @@
 # Validation of the Windows preview
 
+## Local delegation switch 0.3.0
+
+The default home is a compact ON/OFF control. Setup and history are optional Details panels. The persisted local-delegation preference starts OFF, including when an older job database first gains the control table. The switch retains Skill registration and does not rewrite Codex skill configuration.
+
+All 24 source tests passed, including a connected MCP session switching OFF without reconnecting, rejection of new jobs, holding queued work, allowing running work to finish and saved candidates to be finalized, persistent state across Store instances, the compact GUI button, and refusal to enable through a legacy runner. The Skill's instruction changes give conversation requests not to use it priority; this instruction-level behavior is not a separate model evaluation.
+
+The actual Windows bundle smoke test additionally verifies initial OFF, hot OFF with the same MCP connection, no new fake model call while OFF, the hidden Details panel, and saving an existing candidate while OFF. Fake responses and temporary settings are used throughout. Real user settings and model weights are not changed.
+
 ## Desktop edition 0.2.0
 
 The desktop edition adds setup/status/history controls and a Python-bundled Windows x64 ZIP. The application still uses the same service, Store, worker and conversation-side review. It does not add a model call or adopt a candidate from the GUI.

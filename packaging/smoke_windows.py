@@ -62,7 +62,12 @@ async def check(folder):
                                 await session.initialize()
                                 assert len((await session.list_tools()).tools) == 8
                                 status = await call(session, 'local_status')
-                                assert status['backend']['digest_matches'] and status['service']['ready']
+                                assert not status['local_dispatch']['enabled'] and status['service']['ready']
+                                rejected = await session.call_tool('start_job', arguments={'request_key':'off-before','request':'開始しない'})
+                                assert rejected.isError and Backend.calls == before
+                                controller.set_enabled(True)
+                                status = await call(session, 'local_status')
+                                assert status['local_dispatch']['enabled'] and status['backend']['digest_matches']
                                 job = await call(session, 'start_job', request_key='bundle-test', request='仮データの合計を整理する')
                                 for _ in range(20):
                                     candidate = await call(session, 'get_job', job_id=job['id'], wait_seconds=1)
@@ -73,23 +78,31 @@ async def check(folder):
                                     '--codex-config', str(controller.codex_config), '--skill-root', str(controller.skill_root),
                                     '--startup-dir', str(controller.startup_dir), '--check-ui', str(ui)], timeout=30, check=True)
                                 ui_state = json.loads(ui.read_text(encoding='utf8'))
-                                assert ui_state['tabs'] == ['ホーム', '作業履歴', '初回設定']
+                                assert ui_state['tabs'] == ['設定', '履歴']
+                                assert ui_state['details_hidden'] and ui_state['local_enabled'] and ui_state['toggle_label'] == 'OFFにする'
                                 assert ui_state['configured'] and ui_state['jobs'] == 1
                                 assert ui_state['states'] == ['AIの確認待ち']
-                                assert ui_state['home_requested_height'] < 630 and ui_state['setup_requested_height'] < 630
+                                assert ui_state['home_requested_height'] < 280 and ui_state['setup_requested_height'] < 630
+                                controller.set_enabled(False)
+                                assert not (await call(session, 'local_status'))['local_dispatch']['enabled']
+                                rejected = await session.call_tool('start_job', arguments={'request_key':'off-after','request':'開始しない'})
+                                assert rejected.isError and Backend.calls == before + 1
                                 saved = await call(session, 'finalize_job', job_id=job['id'], candidate_hash=candidate['candidate_hash'])
                                 assert (Path(saved['saved_path']) / 'report.md').is_file()
                                 await asyncio.to_thread(subprocess.run, [str(gui), '--config', str(config),
                                     '--codex-config', str(controller.codex_config), '--skill-root', str(controller.skill_root),
                                     '--startup-dir', str(controller.startup_dir), '--check-ui', str(ui)], timeout=30, check=True)
-                                assert json.loads(ui.read_text(encoding='utf8'))['states'] == ['完了']
+                                off_ui = json.loads(ui.read_text(encoding='utf8'))
+                                assert off_ui['states'] == ['完了'] and off_ui['details_hidden']
+                                assert not off_ui['local_enabled'] and off_ui['toggle_label'] == 'ONにする'
                     diagnostics = (root / 'mcp.stderr.log').read_text(encoding='utf8')
                     assert 'Traceback' not in diagnostics, diagnostics
                     assert Backend.calls == before + 1
                     return {'result': 'PASS', 'standalone_exes': True, 'python_removed_from_child_PATH': True,
                             'mcp_tools': 8, 'fake_generations': 1, 'real_model_calls': 0,
                             'gui': ui_state, 'temporary_registration_and_startup': True,
-                            'singleton_start': True, 'review_and_save': True}
+                            'singleton_start': True, 'review_and_save': True, 'default_off': True,
+                            'hot_off_blocks_existing_mcp': True, 'compact_home': True}
                 finally:
                     controller.stop_service()
                     assert all(child.returncode == 0 for child in controller.children), 'Service did not exit cleanly'
