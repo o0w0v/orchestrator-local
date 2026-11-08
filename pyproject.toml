@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "orchestrator-local"
-version = "0.3.0"
+version = "0.4.1"
 description = "Local Gemma jobs with conversation-side review and atomic artifact revisions"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.12,<2", "jsonschema>=4.23,<5", "tomlkit>=0.13,<1"]

@@ -28,6 +28,8 @@ class App:
         self.closed = False
         self.state = {'configured': False, 'jobs': []}
         self.initial_fields = False
+        self.wizard = None
+        self.setup_requested = False
         self.refresh_timer = None
         self.action_buttons = []
         root.title('Orchestrator Local')
@@ -95,7 +97,10 @@ class App:
             self.root.minsize(520, 380); self.root.geometry('560x400')
 
     def open_setup(self):
-        self.toggle_details(True); self.tabs.select(self.setup_page)
+        if self.wizard is not None:
+            self.wizard.window.lift();return
+        from .setup_wizard import SetupWizard
+        self.wizard = SetupWizard(self)
 
     def toggle_dispatch(self):
         if not self.state['configured']:
@@ -154,20 +159,20 @@ class App:
         self.button(row, 'ログフォルダを開く', lambda: self.open_folder('logs')).pack(side='left', padx=(0, 8))
         self.button(row, '使い方を開く', lambda: webbrowser.open('https://github.com/o0w0v/orchestrator-local#readme')).pack(side='left')
         ttk.Label(self.setup_page, text='設定ファイル：' + str(self.controller.config), style='Subtitle.TLabel', wraplength=860).pack(anchor='w', pady=8)
-        ttk.Label(self.setup_page, text='既存設定の保存先は保護されます。旧版からの移行はREADMEをご覧ください。\nこの画面を閉じても、起動済みの実行サービスは動き続けます。', style='Subtitle.TLabel').pack(anchor='w', pady=4)
+        ttk.Label(self.setup_page, text='「初期設定・接続登録」で案内に沿って更新できます。成果物は残ります。\nこの画面を閉じても、起動済みの実行サービスは動き続けます。', style='Subtitle.TLabel').pack(anchor='w', pady=4)
 
     def choose(self, variable, is_file):
         value = filedialog.askopenfilename(parent=self.root, title='既存のollama.exeを選択', filetypes=[('Ollama', 'ollama.exe')]) if is_file else filedialog.askdirectory(parent=self.root)
         if value: variable.set(value)
 
-    def run(self, operation, success='', callback=None):
+    def run(self, operation, success='', callback=None, error_callback=None):
         if self.busy or self.closed: return
         self.busy = True
         for b in self.action_buttons: b.state(['disabled'])
         if success: self.message.set('処理しています…')
         def work():
             try: self.events.put((True, operation(), success, callback))
-            except Exception as exc: self.events.put((False, str(exc), '', None))
+            except Exception as exc: self.events.put((False, str(exc), '', error_callback))
         self.executor.submit(work)
 
     def _drain(self):
@@ -185,7 +190,8 @@ class App:
                 if success: self.refresh()
             else:
                 self.message.set('処理を完了できませんでした。')
-                messagebox.showerror('Orchestrator Local', result, parent=self.root)
+                if callback: callback(result)
+                else: messagebox.showerror('Orchestrator Local', result, parent=self.root)
         self.root.after(100, self._drain)
 
     def refresh(self):
@@ -231,7 +237,7 @@ class App:
             if not enabled and (control['running'] or control['queued']):
                 detail += f"\n進行中{control['running']}件は継続し、待機{control['queued']}件はONまで保留します。"
             self.detail.set(detail)
-            label = {'registered': 'この導入先の接続を登録済み', 'missing': '接続未登録', 'other_installation': '別の導入先が登録されています。旧版で登録解除してから移行してください。', 'invalid': '接続設定を読み取れませんでした。'}[state['connection']]
+            label = {'registered': 'この導入先の接続を登録済み', 'missing': '接続未登録', 'other_installation': '以前の導入が見つかりました。「初期設定・接続登録」で引き継げます。', 'invalid': '接続設定を読み取れませんでした。'}[state['connection']]
             self.connection.set(label)
             if not self.initial_fields:
                 saved = state['settings']; self.data_dir.set(saved['data_dir']); self.ollama_exe.set(saved.get('ollama_exe', '')); self.models.set(saved.get('ollama_environment', {}).get('OLLAMA_MODELS', ''))
@@ -241,6 +247,9 @@ class App:
             if self.auto_refresh and state['configured'] and state['local_dispatch']['enabled'] and not state['service']['ready'] and state['connection'] == 'registered':
                 self.root.after_idle(self.start)
         self.initial_fields = True
+        if self.auto_refresh and not self.setup_requested and (not state['configured'] or state.get('connection') != 'registered'):
+            self.setup_requested = True
+            self.root.after_idle(self.open_setup)
         selection = self.tree.selection()
         self.tree.delete(*self.tree.get_children())
         for job in state['jobs']:
@@ -277,8 +286,7 @@ class App:
             self.run(lambda: self.controller.cancel_job(job['id']), '選択した作業に中止を要求しました。')
 
     def setup(self):
-        values = (self.data_dir.get(), self.ollama_exe.get(), self.models.get() or None, self.autostart.get())
-        self.run(lambda: self.controller.setup(*values), '接続を登録しました。CodexのMCP接続を再起動し、新しい会話を開いてください。')
+        self.open_setup()
 
     def unregister(self):
         if messagebox.askyesno('接続登録を解除', 'この導入先のMCP・Skill登録を解除します。成果物は残ります。自動起動は別のチェック欄で解除できます。続けますか？', parent=self.root):
@@ -316,12 +324,19 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--config'); p.add_argument('--codex-config'); p.add_argument('--skill-root'); p.add_argument('--startup-dir')
     p.add_argument('--check-ui', help='Build verification: render without user actions, write a report and exit')
+    p.add_argument('--setup', action='store_true', help='Open the guided first-run/upgrade setup')
     args = p.parse_args()
     if args.check_ui and not all((args.config, args.codex_config, args.skill_root, args.startup_dir)):
         p.error('--check-ui requires explicit temporary config, codex-config, skill-root and startup-dir')
     root = tk.Tk()
     if args.check_ui: root.withdraw()
     app = App(root, DesktopController(args.config, args.codex_config, args.skill_root, args.startup_dir), auto_refresh=not args.check_ui)
+    if args.setup:
+        def setup_when_ready():
+            if app.busy: root.after(100,setup_when_ready)
+            else:
+                app.setup_requested=True;app.open_setup()
+        root.after(150,setup_when_ready)
     if args.check_ui:
         def report():
             if app.busy:
