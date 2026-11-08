@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "orchestrator_local": {
+      "type": "stdio",
+      "command": "${PLUGIN_ROOT}/.venv/Scripts/python.exe",
+      "args": ["${PLUGIN_ROOT}/serve.py", "--config", "${PLUGIN_ROOT}/local-settings.json"]
+    }
+  }
+}

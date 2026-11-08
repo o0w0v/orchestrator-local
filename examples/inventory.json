@@ -1,0 +1,8 @@
+{
+  "available": 12,
+  "orders": [
+    {"id": "O001", "units": 7, "lot": 2, "cancelled": false},
+    {"id": "O002", "units": 4, "lot": 1, "cancelled": false},
+    {"id": "O003", "units": 3, "lot": 1, "cancelled": true}
+  ]
+}

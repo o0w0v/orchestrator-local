@@ -1,0 +1,26 @@
+# Validation of the Windows preview
+
+Validated on Windows with Python 3.11, MCP Python SDK 1.30.0, an existing Ollama installation, and Gemma4 26B. Other-PC acceptance testing has not been performed.
+
+## Automated checks
+
+Run from this directory after installing `requirements.lock`:
+
+```powershell
+.\.venv\Scripts\python.exe -X utf8 -B -m unittest discover -s tests -v
+```
+
+Tests use the official MCP stdio client and a fake HTTP model backend. They cover request deduplication, reconnects, candidate acceptance, strict patches and result revisions, input paths and limits, CSV escaping, cancellation, failed/incomplete output, cold startup readiness, service interruption without automatic regeneration, and preservation of unrelated settings during registration/removal. No real inference or paid Cloud call is part of the automated suite.
+
+The publication snapshot passed all 13 tests, including clean setup and removal from a source path containing spaces, using only temporary configuration, Skill and data directories.
+
+## Manual acceptance already performed
+
+- One real Gemma inference produced the expected allocation data: available stock 12; order 7 with lot 2 received 6 and backorder 1; the next order received 4; a cancelled order was excluded; remaining stock was 2.
+- The conversation corrected only the unit in the report (`1件` to `1個`) and saved JSON, CSV and Markdown. No regeneration or extra Cloud reviewer was used. All saved file hashes matched their manifest.
+- An actual Windows Startup shortcut launched the service. Launching it a second time retained the same service; neither launch created a job. An OS logout/reboot test was not performed.
+- Existing user configuration was preserved. The same official stdio interface was exercised; the client app still needs to reload the registered MCP and Skill before first use. This does not claim end-to-end acceptance on every ChatGPT surface.
+
+Two development failures were retained locally: an early stdio-owned child was interrupted, and cold-start readiness timed out before generation. They are not hidden retries of the successful inference. Local paths and private acceptance records are excluded from the source release.
+
+This is functional validation of the application, not an independent audit of the prose or a general quality/cost guarantee. The separate 100-case synthetic study is linked from the repository README; it is not rerun during installation or tests.
