@@ -6,6 +6,7 @@
 
 ```powershell
 & "<このSkillのパス>/scripts/call_tool.ps1" -Tool local_status
+& "<このSkillのパス>/scripts/call_tool.ps1" -Tool route_task -ArgumentsFile "<元依頼と資料のJSONファイル>"
 & "<このSkillのパス>/scripts/call_tool.ps1" -Tool start_code_job -ArgumentsFile "<引数JSONファイル>"
 ```
 

@@ -232,7 +232,7 @@ class App:
             self.power_hint.set('クリックして' + ('OFFにする' if enabled else ('ONにする' if connected else '初回設定へ')))
             self.headline.set('ローカル分担 ON' if enabled else 'ローカル分担 OFF')
             if enabled:
-                detail = '対応する作業をPC内のAIに分担します。'
+                detail = 'Lunaが分担を判断し、向いている作業をPC内のAIへ渡します。\n振り分けにはクラウドAIの消費があります。'
                 if not connected: detail = '接続登録が必要です。「詳細」の設定を確認してください。'
                 elif not running: detail = '実行サービスが停止しています。「詳細」で起動できます。'
                 elif state['service'].get('control_version') != 1: detail = '旧版サービスが動作中です。「詳細」で停止してからONにしてください。'

@@ -1,5 +1,17 @@
 # Validation of the Windows preview
 
+## Luna routing and lightweight review (0.7 series)
+
+The published 0.7.2 Setup EXE and ZIP retain the exact SHA-256 values of the installed, tested build. The repository's download links and initial-use instructions were updated for publication afterward; the bundled README is the build-time snapshot. The GUI's Help button opens the current repository README. No runtime source, Skill or model setting changed for publication.
+
+All 45 source tests passed with fake backends and temporary profiles. They include OFF and per-request opt-out without a Cloud call, routing deduplication and concurrent requests, failed-call preservation without retry, oversized-source fallback without truncation, the identical work contract and schema returned to the conversation, and native usage counter reconciliation. A regression fixture accepts only the exact pre-turn disabled-code-host notice; unknown errors and actual execution items remain rejected. The compiled 0.7.1 installer/application passed the isolated smoke test with ten MCP tools, two fake generations, no real inference, and an OFF routing call that invokes no Cloud model.
+
+On the development PC, the app and Skill were updated while preserving the user's ON and Startup settings, existing job-file hashes, model settings and unrelated MCP configuration. A separate manual acceptance used one real Luna low routing call and one real Gemma generation for a 12-row ID-based join. The conversation checked the original sources, order and explicit three-ID evidence contract, then accepted and saved the candidate unchanged. Result files matched their manifest. An identical routing request returned the saved decision, and a per-request opt-out returned direct processing without starting another routing record.
+
+The first real routing response completed successfully but the initial 0.7.0 parser mistook the CLI's disabled-host startup notice for model tool use. The original response and fallback record were retained. A Host-only parser recovery verified the existing native usage, response and original hashes without regenerating the answer; the correction is included from 0.7.1. The 0.7.2 packaging adds the linked documentation and aligns the older README paragraphs with the new behavior. No extra independent Sol reviewer or paid baseline was used. Real routing usage was captured; this chat's full review/setup Credits and actual invoice totals were not measured.
+
+This proves one installation workflow on this PC, not automatic Skill selection in every host or a general quality/savings guarantee. The already-open chat must reload the MCP/Skill through a connection restart and a new chat. The 500-case synthetic study and its ambiguous evidence-ID case remain unchanged.
+
 ## Small code drafts 0.6.0
 
 All 37 source tests passed with fake backends and temporary profiles. New checks cover requested source paths, Windows filename/path collisions, code-job deduplication, review and nested source exports, manifest hashes, preserving earlier revisions, and the installed Skill bridge's shared OFF guard. A GUI shutdown fix cancels pending timers and releases Tcl objects on the UI thread. The actual compiled Setup/application passed the isolated smoke test with Python removed from child PATH, nine MCP tools, both fake data/code generations, installed PowerShell Skill bridge calls, review/save and ON/OFF checks.

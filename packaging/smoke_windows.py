@@ -33,6 +33,10 @@ async def call(session, name, **arguments):
 
 
 async def check(folder):
+    resources=folder/'_internal'
+    assert (resources/'docs/ROUTING_JA.md').is_file()
+    assert (resources/'DESIGN_JA.md').is_file()
+    assert 'MCPの10ツール' in (resources/'README.md').read_text(encoding='utf8')
     backend = ThreadingHTTPServer(('127.0.0.1', 0), Backend)
     thread = threading.Thread(target=backend.serve_forever, daemon=True); thread.start()
     try:
@@ -63,9 +67,11 @@ async def check(folder):
                         async with stdio_client(params, errlog=errlog) as (r, w):
                             async with ClientSession(r, w) as session:
                                 await session.initialize()
-                                assert len((await session.list_tools()).tools) == 9
+                                assert len((await session.list_tools()).tools) == 10
                                 status = await call(session, 'local_status')
                                 assert not status['local_dispatch']['enabled'] and status['service']['ready']
+                                routed = await call(session, 'route_task', request_key='off-routing', request='開始しない')
+                                assert routed['route']=='SOL_DIRECT' and routed['model_called'] is False
                                 rejected = await session.call_tool('start_job', arguments={'request_key':'off-before','request':'開始しない'})
                                 assert rejected.isError and Backend.calls == before
                                 controller.set_enabled(True)
@@ -131,10 +137,12 @@ async def check(folder):
                     assert manifest['files']['source/src/add.js']==hashlib.sha256(source.read_bytes()).hexdigest()
                     assert Backend.calls == before + 2
                     return {'result': 'PASS', 'standalone_exes': True, 'python_removed_from_child_PATH': True,
-                            'mcp_tools': 9, 'fake_generations': 2, 'real_model_calls': 0,
+                            'mcp_tools': 10, 'fake_generations': 2, 'real_model_calls': 0,
                             'gui': ui_state, 'temporary_registration_and_startup': True,
                             'singleton_start': True, 'review_and_save': True, 'default_off': True,
                             'hot_off_blocks_existing_mcp': True, 'compact_home': True,
+                            'off_routing_no_cloud': True,
+                            'linked_documentation_bundled': True,
                             'installed_skill_bridge': True, 'code_dedup_review_source_export': True}
                 finally:
                     controller.stop_service()
@@ -151,7 +159,7 @@ def main():
     args = p.parse_args()
     if args.installer:
         with tempfile.TemporaryDirectory(prefix='orchestrator installer with spaces ') as tmp:
-            root=Path(tmp);destination=root/'Programs/0.6.0';receipt=root/'installer.json'
+            root=Path(tmp);destination=root/'Programs/0.7.0';receipt=root/'installer.json'
             subprocess.run([str(args.installer.resolve()),'--check-payload','--destination',str(destination),
                             '--menu-folder',str(root/'menu'),'--report',str(receipt)],check=True,timeout=60)
             assert json.loads(receipt.read_text())['result']=='PASS'

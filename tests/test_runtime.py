@@ -128,7 +128,7 @@ class RuntimeTests(unittest.IsolatedAsyncioTestCase):
     async def test_stdio_generation_reconnect_patch_and_amend(self):
         before=Backend.calls
         async with client(self.config) as s:
-            tools=await s.list_tools();self.assertEqual(len(tools.tools),9)
+            tools=await s.list_tools();self.assertEqual(len(tools.tools),10)
             a=await call(s,'start_job',request_key='one',request='資料を集計する',inputs={'scenario':'normal'},csv_exports=EXPORTS)
             duplicate=await call(s,'start_job',request_key='one',request='資料を集計する',inputs={'scenario':'normal'},csv_exports=EXPORTS)
             self.assertEqual(a['id'],duplicate['id']);self.assertTrue(duplicate['reused'])

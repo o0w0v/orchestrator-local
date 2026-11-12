@@ -20,7 +20,7 @@ from .paths import default_config
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent
 LIVE = {"QUEUED", "RUNNING"}
-PROMPT = "依頼と元資料に照らし、使えるなら採用。利用に支障のある誤りだけ箇所と影響を示し差分修正。依頼にない要件・表現改善・採点表は追加しない。"
+PROMPT = "依頼と元資料に照らし、使えるならACCEPTだけ返す。利用に支障のある誤りがあれば、箇所と影響を短く示し、直せるなら差分だけ返す。依頼にない要件・表現改善・採点表は追加しない。"
 DEFAULT_DATA_SCHEMA = {"type": "object"}
 
 
@@ -358,6 +358,7 @@ class Store:
             out["original_request"] = payload["request"]
             out["review_inputs"] = {"inputs":payload["inputs"],"files":payload["files"]}
             out["review_instruction"] = PROMPT
+            out["review_data_schema"] = payload['schema']['properties']['data']
         if r["result"]:
             out["artifact"] = parse(r["result"])
             out["csv_exports"] = parse(r["result_exports"]) if r["result_exports"] else parse(r["payload"])["csv_exports"]

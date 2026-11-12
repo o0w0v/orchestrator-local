@@ -1,4 +1,8 @@
-# Orchestrator Local 0.6.0 — Windows preview
+# Orchestrator Local 0.7.2 — Delegation from your usual chat
+
+With local delegation ON in a connected desktop chat, Luna briefly routes suitable deliverable work to Gemma or keeps it in the conversation. The current conversation performs the final lightweight review and necessary patches; it does not add another cloud reviewer or silently change the conversation model to Sol. Luna uses an existing ChatGPT-signed-in Codex CLI and consumes Cloud usage. OFF and per-request opt-out bypass both routing and new local generation.
+
+Download the [Windows 0.7.2 installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.7.2/OrchestratorLocal-0.7.2-Setup.exe). See [release assets and checksums](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.7.2), and [workflow, shared contracts, and evidence](docs/ROUTING_JA.md).
 
 > Keep asking your usual AI as before. Share some of the work with an AI on your PC to reduce Cloud AI consumption.
 
@@ -10,7 +14,7 @@ The goal is to keep the familiar way of asking for work, receive results of the 
 
 ### Related evaluation
 
-A 100-case synthetic comparison reported about 32.78% less known Cloud Credits consumption, including Sol review and partial corrections, with correct adopted data in both methods for all 100 cases. Mean active time increased from 63.10 to 247.32 seconds on the RTX 3080 10GB test PC.
+A new 500-case synthetic data comparison of Luna routing and lightweight review reported about 41.8% less Standard-equivalent usage, including routing, design, review and necessary corrections. Fixed-reference agreement was 500/500 for direct Sol and 499/500 for delegation; the mismatch involved an ambiguous starting evidence ID. See [conditions and limitations](docs/ROUTING_JA.md). This does not guarantee equal quality or the same savings in actual use.
 
 See the [evaluation summary and original records](docs/EVALUATION_JA.md). This public application does not yet measure conversation-side Credits.
 
@@ -26,9 +30,9 @@ When custom MCP tools are unavailable in a conversation with shell access, the i
 
 ## Windows desktop download
 
-Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.6.0/OrchestratorLocal-0.6.0-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; models are not downloaded automatically.
+Download and open the [Windows installer](https://github.com/o0w0v/orchestrator-local/releases/download/v0.7.2/OrchestratorLocal-0.7.2-Setup.exe), then follow the Next buttons. Python is bundled and administrator rights are not needed. Existing Ollama and Gemma4:26b are required; Luna routing also needs an existing ChatGPT-signed-in Codex CLI. Models and the CLI are not downloaded automatically.
 
-The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart Codex once after installation and open a new conversation. Then use the large central power control from the Start menu: a green ring and ON text mean enabled; a gray ring and OFF text mean disabled. Enter and Space also activate the focused control. Initial delegation is OFF. Turning OFF blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.6.0). A portable ZIP remains available.
+The guided setup detects the previous registered installation, preserves its data/model paths and Startup preference, backs up settings, and updates the Codex connection. It refuses to overwrite custom Skills or interrupt active jobs. Restart the Orchestrator Local MCP connection in desktop settings and open a new chat; restart the app if needed. Then use the large central power control from the Start menu: a green ring and ON text mean enabled; a gray ring and OFF text mean disabled. Enter and Space also activate the focused control. Initial delegation is OFF. Turning OFF bypasses new Luna routing and blocks new and queued local starts; running work may finish. The Skill stays registered, and a request not to use local work takes priority even while ON. Details holds optional settings/history. See the [GUI guide](docs/GUI_JA.md) and [unsigned preview release](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.7.2). A portable ZIP remains available.
 
 ## Source installation
 
