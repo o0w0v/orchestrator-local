@@ -14,6 +14,7 @@ from mcp.server.stdio import stdio_server
 from .core import Store,UserError,artifact_schema,input_document,packed,parse,read_settings,sha,validate_artifact
 from .worker import reap_interrupted
 from .service import status as service_status
+from .routing import Router, fallback
 
 
 class ProcessMCP(FastMCP):
@@ -29,7 +30,8 @@ class ProcessMCP(FastMCP):
 def create_server(config_path=None):
     settings=read_settings(config_path)
     store=Store(settings)
-    mcp=ProcessMCP("Orchestrator Local",instructions="利用者の「今回は使わない」「この会話では使わない」を優先し、その範囲ではこのワークフローを使わない。Local分担前にlocal_statusのlocal_dispatch.enabledを確認し、OFFなら通常のCodexで処理する。データ作業はstart_job、小規模コード案はstart_code_jobでGemmaへ渡す。会話側が確認して保存し、コードの反映・起動・テストを担当する。小さい仕事は直接作成しsave_direct_resultで保存する。Local候補はget_jobで取得し、使えればfinalize_jobのACCEPT、利用に支障がある誤りだけ明示PATCH。文体改善や新要件の追加で再生成しない。Job開始は1回。get_job(wait_seconds=25)で待ち、非公開思考や候補全文を何度も表示しない。追加Cloud呼出し・モデルdownload・コード実行機能はない。")
+    router=Router(store)
+    mcp=ProcessMCP("Orchestrator Local",instructions="ローカル分担ON時、対応する依頼ではroute_taskでLunaが1回だけ振り分ける。利用者の「今回は使わない」「この会話では使わない」とOFFを優先し、その範囲では通常処理。SOL_DIRECTは会話側で実行。GEMMA_DIRECTは元依頼と同じ条件をstart_jobへ渡す。SOL_DESIGN_GEMMAは接続・担当だけ短く決めてから渡す。コード案はstart_code_job。get_jobで候補と同じ元条件を確認し、使えるならfinalize_jobのACCEPT、利用に支障がある誤りだけPATCH。好みの文体や新要件で再生成しない。最終確認はこの会話が担当し別の確認AIは追加しない。request_keyは再送時も同じ値。Job開始1回、get_job(wait_seconds=25)で待つ。コードの反映・実行確認は会話側が担当する。")
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def local_status() -> dict:
@@ -39,7 +41,17 @@ def create_server(config_path=None):
         backend=backend_status(settings) if dispatch['enabled'] else {'checked':False,'reason':'local_dispatch_off'}
         with store.connection() as db:
             jobs=[dict(r) for r in db.execute("SELECT id,state,phase,created,saved_path FROM jobs ORDER BY created DESC LIMIT 8")]
-        return {"model":settings["model"],"service":service_status(settings),"backend":backend,"local_dispatch":dispatch,"input_roots":settings["input_roots"],"data_dir":settings["data_dir"],"jobs":jobs,"cloud_api_calls":0,"conversation_Credits":None}
+        return {"model":settings["model"],"service":service_status(settings),"backend":backend,"local_dispatch":dispatch,"routing":router.status(),"input_roots":settings["input_roots"],"data_dir":settings["data_dir"],"jobs":jobs,"conversation_Credits":None}
+
+    @mcp.tool(annotations={"readOnlyHint":False,"destructiveHint":False,"idempotentHint":True,"openWorldHint":True})
+    def route_task(request_key: str, request: str, inputs: dict | None=None,
+                   input_paths: list[str] | None=None, data_schema: dict | None=None,
+                   work_type: str='data', file_paths: list[str] | None=None,
+                   local_allowed: bool=True) -> dict:
+        """ON時の対象依頼をLuna lowで1回振り分ける。既存ChatGPT CLIのCloud消費あり。同じkeyの再送は再生成せず、OFF/今回は使わないならCloudも呼ばない。"""
+        if local_allowed and store.dispatch_state()['enabled'] and not service_status(settings)['ready']:
+            return fallback('ローカル実行サービスが停止しています。新しいCloud振り分けをせず通常処理へ戻します。')
+        return router.route(request_key,request,inputs,input_paths,data_schema,work_type,file_paths,local_allowed)
 
     @mcp.tool(annotations={"readOnlyHint":True,"openWorldHint":False})
     def read_input(path: str) -> dict:

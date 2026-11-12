@@ -7,3 +7,6 @@ dependencies:
     - type: "mcp"
       value: "orchestrator_local"
       description: "このPCのGemma実行、ジョブ管理、確認後の成果物保存"
+
+policy:
+  allow_implicit_invocation: true

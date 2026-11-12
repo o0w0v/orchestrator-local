@@ -3,10 +3,14 @@
 ```mermaid
 flowchart TD
     U[ユーザーの依頼・元資料] --> C[会話側: 必要な条件だけ整理]
-    C --> S{小さい仕事を直接処理できるか}
-    S -->|直接作成| D[会話側で成果物を作る]
+    C --> ON{ローカル分担 ON・対象の作業か}
+    ON -->|OFF・今回は使わない・対象外| D[会話側で成果物を作る]
+    ON -->|対象| L[Luna low: 短い振り分け1回]
+    L -->|SOL_DIRECT| D
     D --> SAVE[データ・共有文・ソースを版別に保存]
-    S -->|Localへ依頼| MCP[MCP またはSkill補助経路]
+    L -->|GEMMA_DIRECT| MCP[MCP またはSkill補助経路]
+    L -->|SOL_DESIGN_GEMMA| DESIGN[会話側: 接続・担当境界だけ設計]
+    DESIGN --> MCP
     MCP --> DB[(SQLite: 依頼・入力・状態)]
     DB --> SERVICE[会話の接続から独立した実行サービス]
     SERVICE --> GEMMA[既存Ollama / Gemma4 26B]
@@ -20,9 +24,13 @@ flowchart TD
     SAVE -->|コード案の場合| COPY[Codexが作業先へ反映・起動・テスト]
 ```
 
-独立したCloud ReviewerやLuna/Terraへの引継ぎを追加しない。会話側のモデルは利用者がアプリで選んだモデルなので、プログラムがSolやeffortを固定するものではない。
+Luna lowは最初の振り分けだけを担当する。独立したCloud Reviewerは追加しない。会話側のモデルは利用者がアプリで選んだモデルなので、プログラムがその会話をSolへ切り替えるものではない。会話側がSolならSolが軽い確認を行う。
 
-`core.py`が入力制限・JSON/schema検証・差分・保存、`server.py`がMCPの9ツール、`service.py`が一重起動とジョブ実行、`worker.py`がOllama接続と中止を担当する。Local候補にshell・ファイル操作・tool実行権限は渡さない。
+`core.py`が入力制限・JSON/schema検証・差分・保存、`server.py`がMCPの10ツール、`service.py`が一重起動とジョブ実行、`worker.py`がOllama接続と中止を担当する。Local候補にshell・ファイル操作・tool実行権限は渡さない。
+
+`routing.py`は既存のChatGPTログイン済みCLIでLuna lowを1回呼ぶ。外側の自動retryやツール実行はせず、元入力・応答・usage metadataを保全する。既存SQLiteの`routing_records`に同じ依頼キーの処理を記録し、再接続でも二重に振り分けない。失敗・中断・過大な入力は通常処理へ戻し、未計測消費を0にしない。OFFと会話での利用辞退はLunaも呼ばない。詳しい条件と測定の限界は[自動分担の説明](docs/ROUTING_JA.md)を参照。
+
+元依頼・必要な条件は短い`inputs.work_contract`としてGemmaと確認側へ同じ内容を渡す。確認側は候補と元資料・同じdata_schemaを直接読み、使える原物を採用する。依頼にない条件や文体の好みで再生成しない。証跡IDを求める時は起点を含むか・参照順を作成前に明確にする。
 
 データ作業は`start_job`、コード案は`start_code_job`を使います。コード案は事前指定した相対パスと内容だけを受け取り、採用時にresult内の`source/`へ書き出します。`code_artifact.py`が絶対パス・親への逸脱・Windows予約名・重複・ファイルとディレクトリの衝突を拒否します。会話側のCodexが確認後に作業先への反映・起動・テストを行います。
 

@@ -1,4 +1,10 @@
-# Orchestrator Local 0.6.0 — Windows向け初期版
+# Orchestrator Local 0.7.2 — チャットから使う自動分担
+
+ONにして、いつものチャットで依頼します。対応する作業をLunaが短く振り分け、向いている部分をPC内のGemmaへ渡し、会話側が確認して結果を返します。毎回Skill名やモデル名を指定する必要はありません。小さい仕事は通常処理、使える成果物はそのまま採用し、必要な箇所だけ直します。
+
+Lunaは既存ChatGPTログイン済みCodex CLIを使い、振り分けにもCloud消費があります。会話モデルがSolならSolが軽い最終確認を行います。別の確認AIを追加したり、任意の会話をSolへ切り替えたりする機能ではありません。接続・ON/OFF・条件共有・測定根拠は[自動分担の説明](docs/ROUTING_JA.md)を参照してください。
+
+[Windows版0.7.2をダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.7.2/OrchestratorLocal-0.7.2-Setup.exe)して導入できます。[リリースとチェックサム](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.7.2)も公開しています。
 
 > いつものAIへの頼み方はそのまま。作業の一部をPC内のAIに分担させ、クラウドAIの消費を抑えることを目指します。
 
@@ -12,9 +18,9 @@
 
 ### 関連する検証結果
 
-設計の参考にした100件比較では、Solの確認・部分修正込みの既知Credits小計が約32.78％減り、採用データは両方式100/100件正解でした。一方、平均active時間は63.10秒から247.32秒に増えました（RTX 3080 10GBでの実測）。
+今回のLuna振り分けと軽い確認を使った新規500件の合成データ作業では、振り分け・設計・確認・必要修復込みの報告usage換算が約41.8％減りました。固定正解との一致は通常Solが500/500件、新方式が499/500件。不一致には証跡の起点IDを含めるかという公開仕様の曖昧さがありました。[測定の条件と限界](docs/ROUTING_JA.md#測定根拠)を参照してください。品質完全同等や、実際の利用で同じ削減率を保証する結果ではありません。
 
-[検証結果の要約と元記録](docs/EVALUATION_JA.md)を参照してください。これは合成業務データでの比較であり、公開アプリの会話側Creditsはまだ計測していません。
+以前の100件比較では約32.78％減、採用データは両方式100/100件正解で、平均active時間は63.10秒から247.32秒へ増えました。[以前の検証結果](docs/EVALUATION_JA.md)とは方式や条件が異なり、率を合算しません。今回のアプリ自体の会話側Creditsはまだ完全計測していません。
 
 ### 内部では何をしているか
 
@@ -30,24 +36,24 @@ Windowsで、既存Ollamaの`gemma4:26b`を実行できるPCが対象。GUI配�
 
 ## Windowsで始める
 
-[インストーラをダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.6.0/OrchestratorLocal-0.6.0-Setup.exe)して開き、案内に沿って「次へ」で進めてください。管理者権限やPythonの手動導入は不要です。既存のOllamaとGemma4:26bは必要です。
+[インストーラをダウンロード](https://github.com/o0w0v/orchestrator-local/releases/download/v0.7.2/OrchestratorLocal-0.7.2-Setup.exe)して開き、案内に沿って「次へ」で進めてください。管理者権限やPythonの手動導入は不要です。既存のOllamaとGemma4:26b、Luna振り分けにはChatGPTログイン済みCodex CLIが必要です。
 
 1. 検出した保存先・Ollamaを確認し、「インストールする」を押します。
-2. Codexを再起動して、新しい会話を開きます。
+2. デスクトップの設定でOrchestrator LocalのMCP接続を再起動し、新しい会話を開きます。必要ならアプリを再起動します。
 3. スタートメニューからOrchestrator Localを開き、使いたいときにONにします。
 
 以前の導入があれば、設定・モデルの場所・成果物・自動起動を引き継ぎます。登録解除やフォルダ移動は不要です。設定はバックアップし、利用者が変更したSkillや作業中の依頼がある場合は上書きせず案内します。
 
 |切り替え|動作|
 |---|---|
-|ON|対応する作業で、必要に応じてGemmaへ分担する|
-|OFF|新しいGemma作業を開始せず、通常のCodexで処理する|
+|ON|対象の作業をLunaが短く振り分け、向いている部分をGemmaへ分担する|
+|OFF|新しいLuna振り分け・Gemma作業を開始せず、通常の会話で処理する|
 
 依頼と結果の受け取りはCodexの会話で行います。中央の電源ボタンで切り替えます。ONは緑のリング、OFFはグレーで表示し、文字でも状態を確認できます。初期状態はOFF。ONでも「今回は使わない」という指示を優先します。設定・履歴は「詳細」にあります。
 
 ON/OFFは再起動なしで反映します。進行中の作業は継続し、待機中は次にONにするまで保留します。同じ保存先を使う会話で共通です。Skill登録は残ります。
 
-詳しい[使い方と更新](docs/GUI_JA.md)、[リリースとSHA-256](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.6.0)も参照してください。手動配置向けのZIPも残しています。Windows版は未署名の初期版です。
+詳しい[使い方と更新](docs/GUI_JA.md)、[リリースとSHA-256](https://github.com/o0w0v/orchestrator-local/releases/tag/v0.7.2)も参照してください。手動配置向けのZIPも残しています。Windows版は未署名の初期版です。
 
 ## ソースから導入する
 
@@ -73,7 +79,6 @@ PowerShellがスクリプト実行を制限する環境では、そのPCの方�
 新しい会話で次を入力する。サンプルはセットアップ時に利用者のinboxへコピーされる。
 
 ```text
-$orchestrator-local
 inboxのinventory-example.jsonを使って、注文ID順に在庫を引き当て、一覧CSVと短い共有文を作ってください。
 取消はEXCLUDEDで引当・不足0。対象は引当=min(注文数,残在庫)//lot*lot、不足=注文数-引当とし、引当数だけ在庫を減らします。
 数量と件数を区別し、不足がある場合は資料に基づく実際の原因を書いてください。使える成果物はそのまま採用し、必要な箇所だけ直してください。
@@ -115,7 +120,7 @@ inboxのinventory-example.jsonを使って、注文ID順に在庫を引き当て
 
 ## 費用・実験との違い
 
-会話側のモデルはアプリで選択したモデル。プログラムはSol/Luna/Terraを別に呼ばないため、会話側のモデル・effortを固定した実験の再現ではない。会話側の消費Creditsはnull、Local実測tokensと時間だけを記録し、節約額を推測しない。
+会話側のモデルはアプリで選択したモデル。対象作業の最初の振り分けだけ、既存ChatGPTログイン済みCLIのLuna lowを別に1回使います。別のSol/Terra確認は追加しません。Lunaの報告usageとLocal実測tokens・時間を保存し、会話側の消費Creditsは未計測のnullとして区別します。会話モデル・effortを固定した実験の完全な再現や、実利用の節約額を推測しません。
 
 Gemmaは既存digest・native thinking・ctx65536/output32768・seed/samplingを使用。業務版は既存Ollamaを再利用し、必要な場合だけ所有serverを起動、モデルを5分保持する。100件実験の「毎回fresh load/停止」と条件が異なる。過去の実験成績を業務の品質保証とは扱わない。
 
@@ -141,7 +146,7 @@ Gemmaは既存digest・native thinking・ctx65536/output32768・seed/samplingを
 
 ## 実装と確認
 
-`orchestrator_local/core.py`がジョブ・入力・差分・保存、`service.py`が独立した実行サービス、`worker.py`がOllama生成と中止、`server.py`がMCPの9ツール、`tool_bridge.py`が同じハンドラを呼ぶ補助経路。Skillは`skills/orchestrator-local/SKILL.md`。
+`orchestrator_local/core.py`がジョブ・入力・差分・保存、`routing.py`がLunaの一度限りの振り分け、`service.py`が独立した実行サービス、`worker.py`がOllama生成と中止、`server.py`がMCPの10ツール、`tool_bridge.py`が同じハンドラを呼ぶ補助経路。Skillは`skills/orchestrator-local/SKILL.md`。
 
 テストは偽Ollamaを用いたstdio MCP→worker→確認・保存、再接続、二重依頼、中止、失敗、パス制限、差分原子性を確認する。実モデルの接続確認は別に小さい1件を使い、実験用100件は再実行しない。
 

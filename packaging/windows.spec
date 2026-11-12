@@ -2,8 +2,8 @@
 from pathlib import Path
 
 root = Path(SPECPATH).parent
-resources = [(str(root / name), name) for name in ['skills', 'examples']]
-resources += [(str(root / name), '.') for name in ['LICENSE', 'README.md']]
+resources = [(str(root / name), name) for name in ['skills', 'examples', 'docs']]
+resources += [(str(root / name), '.') for name in ['LICENSE', 'README.md', 'README_EN.md', 'DESIGN_JA.md', 'VALIDATION.md']]
 resources += [(str(root / 'build-resources/licenses'), 'licenses'),
               (str(root / 'build-resources/THIRD_PARTY_NOTICES.txt'), '.')]
 gui = Analysis([str(root / 'desktop_entry.py')], pathex=[str(root)], datas=resources,

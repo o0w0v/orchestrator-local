@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .core import UserError,parse
 
-TOOLS={'local_status','read_input','start_job','start_code_job','get_job','cancel_job',
+TOOLS={'local_status','route_task','read_input','start_job','start_code_job','get_job','cancel_job',
        'finalize_job','amend_result','save_direct_result'}
 
 
